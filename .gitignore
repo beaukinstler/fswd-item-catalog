@@ -1,0 +1,4 @@
+*.code-workspace
+*secret*
+*.pyc
+.vscode/*
