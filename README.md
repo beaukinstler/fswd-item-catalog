@@ -8,4 +8,4 @@
 
 [ ] make JSON API end points
 
-[ ] Project from CSRF
+[ ] Protect from CSRF
