@@ -25,7 +25,7 @@ ses = DBSession()
 
 
 # db update function
-def update_item(object_name):
+def update_object(object_name):
     """
     Take and object, and update it in the database
     """
@@ -42,7 +42,7 @@ def list_all_category():
     List all categories by name and id, order based on data table
     """
     
-    category_list = ses.query(category)
+    category_list = ses.query(Category)
 
     for category in category_list:
         print("Name: {}, ID: {}".format(str(category.name), str(category.cat_id)))
@@ -54,14 +54,14 @@ def get_all_categories():
     Returns: An iterable list of category objects
     """
     
-    return ses.query(category)
+    return ses.query(Category)
 
 
 # Find category by ID
 def get_category(id_to_find):
     """ Using and id number, return category object """
 
-    category = ses.query(category).filter_by(cat_id=id_to_find).one()
+    category = ses.query(Category).filter_by(id=id_to_find).one()
     return category
 
 
@@ -100,7 +100,7 @@ def update_category(cat_id, name):
     """
     category = get_category(cat_id)
     category.name = name
-    update_item(category)
+    update_object(category)
 
 def get_all_items(cat_id):
     """ Using an ID, return a  item
@@ -128,7 +128,7 @@ def get_item(id_to_find):
     (Object.Item)  item object
     """
 
-    item = ses.query(Item).filter_by(cat_id=id_to_find).one()
+    item = ses.query(Item).filter_by(id=id_to_find).one()
     return item
 
 
@@ -174,7 +174,7 @@ def update_item(cat_id, item_id, name, description, price):
     if str(price) != "":
         item.price = str(price)
 
-    update_item(item)
+    update_object(item)
 
 
 # Return all the categories

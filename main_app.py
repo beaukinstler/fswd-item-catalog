@@ -79,8 +79,8 @@ def editItem(cat_id, item_id):
         flash("Item updated!")
         return redirect(url_for('categoryItems', cat_id=cat_id))
     else:
-        item = get_category_items_item(item_id)
-        return render_template('editcategory_items.html',item=item)
+        item = get_item(item_id)
+        return render_template('edititem.html',item=item)
 
 @app.route('/category/<int:cat_id>/category_items/<int:item_id>/delete', methods=['GET', 'POST'])
 def deleteItem(cat_id, item_id):
@@ -93,20 +93,25 @@ def deleteItem(cat_id, item_id):
             pass
         return redirect(url_for('categoryItems', cat_id=cat_id))
     else:
-        item = get_category_items_item(item_id)
-        return render_template('delete_category_item.html',item=item)
+        item = get_item(item_id)
+        return render_template('deleteitem.html',item=item)
 
 
 ## JSON routes
 @app.route('/category/<int:cat_id>/json', methods=['GET'])
 def getAllItemJson(cat_id):
+    cat = get_category(cat_id).serialize
+    # cat_json = cat.serialize
     items = get_all_items(cat_id)
-    return jsonify(Items=[item.serialize for item in items])
+    return_json = cat.copy()
+    return_json.update(Items=[item.serialize for item in items])
+    return jsonify(return_json)
+    # return  jsonify(Items=[item.serialize for item in items])
 
 
 @app.route('/category/<int:cat_id>/category_items/<int:item_id>/json', methods=['GET'])
 def getItemJson(cat_id, item_id):
-    item = get_category_items_item(item_id)
+    item = get_item(item_id)
     return jsonify(Items=item.serialize)
 
 ## JSON routes
