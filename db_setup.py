@@ -114,7 +114,9 @@ class Item(BASE):
             'name': self.name,
             'description': self.description,
             'id': self.id,
-            'price': self.price   
+            'price': self.price,
+            'category':self.category.name,
+            'category_id':self.cat_id
         }
 
 

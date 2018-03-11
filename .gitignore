@@ -2,3 +2,4 @@
 *secret*
 *.pyc
 .vscode/*
+templates/.old/

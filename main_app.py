@@ -5,6 +5,12 @@ from db_setup import BASE, User, Item, Category
 from db_command import *
 # from categories_views import *
 import pdb
+# user auth libraries
+
+from flask.ext.httpauth import HTTPBasicAuth
+
+
+auth = HTTPBasicAuth()
 
 
 app = Flask(__name__)
@@ -15,15 +21,51 @@ BASE.metadata.bind = engine
 DBSession = sessionmaker(bind=engine)
 session = DBSession()
 
+
+@auth.verify_password
+def verify_password(usernameOrToken,password):
+    # first see if the usernameOrToken is a token
+    # if it is, it will pass back and ID, if not
+    # it will send back None
+    user_id = User.verify_auth_token(usernameOrToken)
+    if user_id:
+        print("Looking for user_id {0}".format(user_id))
+        user = session.query(User).filter_by(id=user_id).first()
+    else:
+        print("Looking for user {0} with password {1}".format(usernameOrToken,password))
+        user = session.query(User).filter_by(username=usernameOrToken).first()    
+        if not user or not user.verify_password(password):
+            return False
+
+    g.user = user
+    return True
+
+
+#add /token route here to get a token for a user with login credentials
+@app.route('/token', methods = ['GET'])
+@auth.login_required
+def get_token():
+    token = g.user.generate_auth_token()
+    return jsonify({ 'token': token.decode('ascii')})#, 201#, {'Location': url_for('get_user', id = user.id, _external = True)}
+
+
+
+
 @app.route('/')
 @app.route('/categories')
 def index():
     categories = get_all_categories()
 
     return render_template('categories.html',categories=categories)
-        
 
 @app.route('/category/<int:cat_id>/')
+@app.route('/category/<int:cat_id>/show')
+def category(cat_id):
+
+    category = get_category(cat_id)
+
+    return render_template('category.html',category=category)       
+
 @app.route('/category/<int:cat_id>/category_items')
 def categoryItems(cat_id):
     category = session.query(Category).filter_by(id=cat_id).one()
@@ -31,35 +73,6 @@ def categoryItems(cat_id):
     # return output
     user = 'admin'
     return render_template('category_items.html',category=category,items=items,user=user)
-
-# @app.route('/category/new', methods=['GET', 'POST'])
-# def newCategory():
-#     if request.method == 'POST':
-#         new_id = add_category(request.form['name'],request.form['option'])
-#         flash("Category added!")
-#         return redirect(url_for('categoryItems', cat_id=new_id))
-#     else:
-#         categories = get_all_categories()
-#         return render_template('newcategory.html',categories=categories)
-
-# @app.route('/category/<int:cat_id>/edit', methods=['GET', 'POST'])
-# def editCategory():
-#     if request.method == 'POST':
-#         new_id = update_category(cat_id,request.form['name'],request.form['cat_id'])
-#         flash("Category updated!")
-#         return redirect(url_for('categoryItems', cat_id=cat_id))
-#     else:
-#         return "TODO: form for updating a category"
-
-# @app.route('/category/<int:cat_id>/delete', methods=['GET', 'POST'])
-# def deleteCategory(cat_id):
-#     if request.method == 'POST':
-#         delete_category(cat_id)
-#         flash("Category deleted!")
-#         return redirect(url_for('index'))
-#     else:
-#         category = get_category(cat_id)
-#         return render_template('deletecategory.html',category=category)
 
 @app.route('/category/<int:cat_id>/category_items/new', methods=['GET', 'POST'])
 def newItem(cat_id):
@@ -87,7 +100,7 @@ def deleteItem(cat_id, item_id):
     
     if request.method == 'POST':
         if request.form['delete'] == 'Delete':
-            delete_category_item(item_id)
+            delete_item(item_id)
             flash("Item deleted!")
         elif request.form['delete'] == 'Cancel':
             pass
@@ -126,11 +139,7 @@ def getAllCategories():
 
     return render_template('categories.html',categories=categories)
 
-@app.route('/category/<int:cat_id>', methods=['GET'])
-def category(cat_id):
-    category = get_category(cat_id)
 
-    return render_template('category.html',category=category)
 
 @app.route('/category/new', methods=['GET', 'POST'])
 def newCategory():
@@ -144,7 +153,7 @@ def newCategory():
 @app.route('/category/<int:cat_id>/edit', methods=['GET', 'POST'])
 def editCategory(cat_id):
     if request.method == 'POST':
-        update_category(cat_id, request.form['category_name'])
+        update_category(cat_id, request.form['name'])
         flash("Category updated!")
         return redirect(url_for('getAllCategories'))
     else:
