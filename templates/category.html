@@ -10,7 +10,15 @@
 <body>
 
 <h1>{{category.name}}</h1>
-
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+<ul>
+    {% for message in messages %}
+    <li> <strong> <span class="flash">{{ message }}</span> </strong></li>
+    {% endfor %}
+</ul>
+{% endif %}
+{% endwith %}
 <div>
 <p><a href="{{url_for('categoryItems', cat_id=category.id)}}">Category Items</a></p>
 <p><a href="{{url_for('editCategory', cat_id=category.id)}}">Edit</a></p>

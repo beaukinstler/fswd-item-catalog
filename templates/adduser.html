@@ -1,0 +1,31 @@
+<html>
+        <head>
+                <title>Catalog - New Category</title>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1">
+                <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+                <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+                <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+        </head>
+<body>
+<h1> Create a new User </h1>
+
+<form action="{{url_for('create_user', username=username, password=password, email=email)}}" method = 'POST'>
+
+<p>User Name:</p>
+
+<input type='text' size='30' name='username'>
+
+<p>email</p>
+<input type='email' size='30' name='email'>
+
+
+<p>Password</p>
+<input type='text' size='30' name='password'>
+
+<input type='submit' value='Create'>
+
+</form>
+
+</body>
+</html>

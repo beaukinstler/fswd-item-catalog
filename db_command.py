@@ -5,8 +5,9 @@ to access the database with the app.
 from sqlalchemy import exc
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-
-from db_setup import BASE, Item, Category
+import random, string
+# from flask import session as login_session
+from db_setup import BASE, Item, Category, User
 
 engine = create_engine('sqlite:///catalog.db')
 # Bind the engine to the metadata of the Base class so that the
@@ -176,7 +177,6 @@ def update_item(cat_id, item_id, name, description, price):
 
     update_object(item)
 
-
 # Return all the categories
 def get_all_categories():
     """
@@ -186,8 +186,50 @@ def get_all_categories():
     
     return ses.query(Category)
 
+def get_user(username):
+    # first look up the username
+    user = ses.query(User).filter_by(username=username).first()
+
+    # next look in the email field, in case email was used instead
+    if user is None:
+        user = ses.query(User).filter_by(email=username).first()
+    return user
+
+def get_user_from_id(id):
+    user = ses.query(User).filter_by(id=id).first()
+    return user
+
+def get_user_id_from_email(email):
+    try:
+        user = ses.query(User).filter_by(email=email).first()
+        return user.id
+    except:
+        return None
+
+def add_user(username,password,email):
+    """
+    Add a new user, return None if not able
+    """
+
+    if ses.query(User).filter_by(username=username).first() is None:
+        new_user = User(username=username,email=email)
+        new_user.hash_password(password)
+        # new_user.active = 0
+        ses.add(new_user)
+        ses.commit()
+        return get_user(username).id
+    else:
+        return None
+
+def get_all_users():
+    return ses.query(User)    
 
 
-
-
-
+# create a user
+def createUser(login_session):
+    newUser = User(username = login_session['username'], email = login_session['email'], 
+              password_hash = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in xrange(20)))
+    ses.add(newUser)
+    ses.commit()
+    user = ses.query(User).filter_by(email = login_session['email']).one()
+    return user.id

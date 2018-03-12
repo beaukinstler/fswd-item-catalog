@@ -20,6 +20,8 @@ class User(BASE):
     id = Column(Integer, primary_key=True)
     username = Column(String(32), index=True)
     password_hash = Column(String(64))
+    email = Column(String(250))
+    # active = Column(Integer, default=0)
 
     def hash_password(self, password):
         self.password_hash = app_context.encrypt(password)
@@ -45,8 +47,16 @@ class User(BASE):
         s = Serializer(secret_key,expires_in=expiration)
         return s.dumps({'id': self.id})
 
-    @staticmethod
+    @property
+    def serialize(self):
+        """Return the object fields as JSON like format"""
+        return {
+            'name': self.username,
+            'id': self.id,
+            'pass_hash': self.password_hash 
+        }
 
+    @staticmethod
     def verify_auth_token(token):
         """
         Purpose: Decrypt a token and check for the user id. 
@@ -64,12 +74,17 @@ class User(BASE):
         try:
             data = s.loads(token)
         except SignatureExpired:
+            print("Expired token")
             return None
-        except BadSignature: 
-              return None
-
+        except BadSignature:
+            print("Bad token: {0}".format(BadSignature.message))
+            return None
+        
+        print("if bad token,this shouldn't print")
         user_id = data['id']
         return user_id
+
+
 
 class Category(BASE):
     """
