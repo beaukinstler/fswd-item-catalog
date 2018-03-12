@@ -295,6 +295,11 @@ def getUsers():
     return jsonify(User=[user.serialize for user in users])
 
 
+# @app.route('/')
+# def main():
+#     categories = get_all_categories()
+#     return render_template('categories.html',categories=categories)
+
 @app.route('/')
 @app.route('/categories')
 def index():
