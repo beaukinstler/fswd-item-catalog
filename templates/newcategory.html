@@ -1,24 +1,24 @@
-<html>
-        <head>
-                <title>Catalog - New Category</title>
-                <meta charset="utf-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1">
-                <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
-                <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-                <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
-        </head>
-<body>
-<h1> Create a new Category </h1>
+{% extends "main.html" %}
+{% block title %}Create Category{% endblock %}
 
-<form action="{{url_for('newCategory', name=name)}}" method = 'POST'>
+{% block head %}
+{{ super() }}
 
-<p>Category Name:</p>
+{% endblock %}
 
-<input type='text' size='30' name='name'>
+{% block pageheader %}Create a new Category{% endblock %}
 
-<input type='submit' value='Create'>
+{% block content %}
+{{ super() }}
 
-</form>
+        <form action="{{url_for('newCategory', name=name)}}" method = 'POST'>
 
-</body>
-</html>
+                <p>Category Name:</p>
+                
+                <input type='text' size='30' name='name'>
+                
+                <input type='submit' value='Create'>
+                        
+        </form> 
+
+{% endblock %}

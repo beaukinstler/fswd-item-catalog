@@ -1,31 +1,20 @@
-<html>
-        <head>
-                <title>Catalog - Categories</title>
-                <meta charset="utf-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1">
-                <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
-                <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-                <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
-        </head>
-<body>
+{% extends "main.html" %}
+{% block title %}Log out{% endblock %}
 
-<h1>{{category.name}}</h1>
-{% with messages = get_flashed_messages() %}
-{% if messages %}
-<ul>
-    {% for message in messages %}
-    <li> <strong> <span class="flash">{{ message }}</span> </strong></li>
-    {% endfor %}
-</ul>
-{% endif %}
-{% endwith %}
-<div>
-<p><a href="{{url_for('categoryItems', cat_id=category.id)}}">Category Items</a></p>
-<p><a href="{{url_for('editCategory', cat_id=category.id)}}">Edit</a></p>
-<p><a href="{{url_for('deleteCategory', cat_id=category.id)}}">Delete</a></p>
+{% block head %}
 
-</div>
+{{ super() }}
+{% endblock %}
 
-</body>
+{% block pageheader %} {{category.name}} {% endblock %}
 
-</html>
+{% block content %}
+{{ super() }}
+
+        <div>
+                <p><a href="{{url_for('categoryItems', cat_id=category.id)}}">Category Items</a></p>
+                <p><a href="{{url_for('editCategory', cat_id=category.id)}}">Edit</a></p>
+                <p><a href="{{url_for('deleteCategory', cat_id=category.id)}}">Delete</a></p>
+        </div>
+
+{% endblock %}

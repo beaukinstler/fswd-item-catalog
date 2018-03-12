@@ -1,0 +1,37 @@
+{% extends "main.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block head %}
+
+{{ super() }}
+{% endblock %}
+
+{% block pageheader %} Dashboard {% endblock %}
+
+{% block content %}
+{{ super() }}
+
+
+
+<div class="container-fluid">
+        <p>Welcome to the dashboard.</p>
+        <p>
+            Click one of the recently added items for more info,
+            or select a <em>Category</em> to drill in...
+        </p>
+        <div class="row">
+            <div class="col-sm-4" style="background-color:rgb(241, 234, 207);">
+                <h4>Categories</h4>
+                {% for cat in categories %}
+                <div>
+                    <a href="{{url_for('category', cat_id=cat.id)}}">{{cat.name}}</a>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="col-sm-8" style="background-color:rgb(184, 235, 236);">
+                <h4>Recent Items</h4>
+            </div>
+        </div>
+      </div>
+
+{% endblock %}

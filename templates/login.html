@@ -1,29 +1,35 @@
-<html>
-    <head>
-    <!--LOAD PRE-REQUISITES FOR GOOGLE SIGN IN -->
-    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
-  
-    <script src="//apis.google.com/js/platform.js?onload=start"> </script>
-  
- 
- <!-- END PRE-REQUISITES FOR GOOGLE SIGN IN -->    
-    </head>
-    <body>
-        <div id="signinButton">
-            <span class="g-signin"
-              data-scope="openid email"
-              data-clientid="737452906240-jp6gv4gvr6rkr9m02i6j5lmldp6gcif1.apps.googleusercontent.com"
-              data-redirecturi="postmessage"
-              data-accesstype="offline"
-              data-cookiepolicy="single_host_origin"
-              data-callback="signInCallback"
-              data-approvalprompt="force">
-            </span>
-          </div>
-          <div id='result'>
+{% extends "main.html" %}
+{% block title %}Category List{% endblock %}
 
-          </div>
-<script>
+{% block head %}
+{{ super() }}
+<!--LOAD PRE-REQUISITES FOR GOOGLE SIGN IN -->
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+<script src="//apis.google.com/js/platform.js?onload=start"> </script>
+<!-- END PRE-REQUISITES FOR GOOGLE SIGN IN -->
+{% endblock %}
+
+{% block pageheader %}Login options{% endblock %}
+
+{% block content %}
+{{ super() }}
+    <div id="signinButton">
+        <h3>Sign in or create a user account with Google</h3>
+        <span class="g-signin"
+            data-scope="openid email"
+            data-clientid="737452906240-jp6gv4gvr6rkr9m02i6j5lmldp6gcif1.apps.googleusercontent.com"
+            data-redirecturi="postmessage"
+            data-accesstype="offline"
+            data-cookiepolicy="single_host_origin"
+            data-callback="signInCallback"
+            data-approvalprompt="force">
+        </span>
+    </div>
+    <div id='result'>
+
+    </div>
+    <script>
+    
     function signInCallback(authResult) {
         if (authResult['code']) {
             // Hide the sign-in button now that the user is authorized
@@ -57,87 +63,28 @@
             }); 
         } 
     }
-</script>
+    </script>
 
-<!--FACEBOOK SIGN IN -->
-<script>
-    window.fbAsyncInit = function() {
-    FB.init({
-        appId      : '1758814737472236',
-        cookie     : true,  // enable cookies to allow the server to access 
-                            // the session
-        xfbml      : true,  // parse social plugins on this page
-        version    : 'v2.2' // use version 2.2
-    });
-    };
-    // Load the SDK asynchronously
-    (function(d, s, id) {
-        var js, fjs = d.getElementsByTagName(s)[0];
-        if (d.getElementById(id)) return;
-        js = d.createElement(s); js.id = id;
-        js.src = "//connect.facebook.net/en_US/sdk.js";
-        fjs.parentNode.insertBefore(js, fjs);
-    }(document, 'script', 'facebook-jssdk'));
-    // Here we run a very simple test of the Graph API after login is
-    // successful.  See statusChangeCallback() for when this call is made.
-    function sendTokenToServer() {
-        var access_token = FB.getAuthResponse()['accessToken'];
-        console.log(access_token)
-        console.log('Welcome!  Fetching your information.... ');
-        FB.api('/me', function(response) {
-        console.log('Successful login for: ' + response.name);
-        $.ajax({
-        type: 'POST',
-        url: '/fbconnect?state={{STATE}}',
-        processData: false,
-        data: access_token,
-        contentType: 'application/octet-stream; charset=utf-8',
-        success: function(result) {
-            // Handle or verify the server response if necessary.
-            if (result) {
-            $('#result').html('Login Successful!</br>'+ result + '</br>Redirecting...')
-            setTimeout(function() {
-            window.location.href = "/restaurant";
-            }, 4000);
-            
-        } else {
-            $('#result').html('Failed to make a server-side call. Check your configuration and console.');
-            }
-        }
-        
-    });
-        });
-    }
-</script>
-<button>
-         
+<!-- custom login form -->
+    <h3>Login with an account</h3>
+    <form action="{{url_for('showLogin', username=username, password=password, email=email )}}" method = 'POST'>
 
-        <fb:login-button scope="public_profile,email" onlogin="sendTokenToServer();">
-<a href='javascript:sendTokenToServer()'>Login with Facebook</a>
+        <p>UserName:</p>
 
-</fb:login-button>
+        <input type='text' size='30' name='username' value="">
 
+        <p>Email:</p>
 
-      </button>
+        <input type='email' size='10' name='email' value="">
 
-      <form action="{{url_for('showLogin', username=username, password=password, email=email )}}" method = 'POST'>
+        <p>Password:</p>
 
-            <p>UserName:</p>
-            
-            <input type='text' size='30' name='username' value="">
-            
-            <p>Email:</p>
-            
-            <input type='email' size='10' name='email' value="">
-            
-            <p>Password:</p>
-            
-            <input type='password' size='10' name='password' value="12345">
-            
-            <input type='submit' value='Save'>
-            
-            <a href="{{url_for('showLogin')}}">Cancel</a>
-            
-            </form>
-    </body>
-</html>
+        <input type='password' size='10' name='password' value="12345">
+
+        <input type='submit' value='Save'>
+
+        <a href="{{url_for('showLogin')}}">Cancel</a>
+
+    </form>
+
+{% endblock %}

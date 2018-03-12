@@ -194,7 +194,7 @@ def gdisconnect():
 @app.route('/logout')
 def Logout():
     login_session.clear()
-    return "Logout", 401
+    return render_template('loggedout.html'), 401
 
 @auth.verify_password
 def verify_password(usernameOrToken,password):
@@ -299,6 +299,11 @@ def getUsers():
 # def main():
 #     categories = get_all_categories()
 #     return render_template('categories.html',categories=categories)
+@app.route('/landing')
+def landing():
+    categories = get_all_categories()
+    # recent_items = get_recent_items()
+    return render_template('landing.html',categories=categories)
 
 @app.route('/')
 @app.route('/categories')

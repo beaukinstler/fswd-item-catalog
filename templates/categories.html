@@ -5,21 +5,19 @@
 {{ super() }}
 {% endblock %}
 
-{% block content %}
-{{ super() }}
 {% block pageheader %}Categories{% endblock %}
 
-<div><h4><a href="{{url_for('newCategory')}}">Create a new category</a></h4></div>
+{% block content %}
+{{ super() }}
 
-{% for cat in categories %}
-
-<div>
-
-<!-- <p>{{cat.name}} --- {{cat.id}}</p> -->
-<h3><a href="{{url_for('category', cat_id=cat.id)}}">{{cat.name}}</a></h3>
-
-</div>
-
-{% endfor %}
+    <div>
+        <h4><a href="{{url_for('newCategory')}}">Create a new category</a></h4>
+    </div>
+        {% for cat in categories %}
+        <div>
+            <h3><a href="{{url_for('category', cat_id=cat.id)}}">{{cat.name}}</a></h3>
+        </div>
+        {% endfor %}
+        
 {% endblock %}
 
