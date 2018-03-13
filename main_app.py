@@ -30,7 +30,31 @@ BASE.metadata.bind = engine
 DBSession = sessionmaker(bind=engine)
 session = DBSession()
 
- 
+"""
+ROUTES
+
+Contents:
+    1. User based routes
+    2. Catalog routes
+    3. JSON API based routes
+
+Authentication and Access:
+Note that there are multiple auth and access controls in place
+
+Auth:
+API - Using HTTPAuth, methods for authenticating as a user, and returned a token
+OAuth - Google can be used for created and logging in as a user
+Custom - Using passlib, there is a custom implementation as well using 
+         password hashing.
+
+Access Control:
+Some routes require having a username in the session. This will be set 
+by both Google OAuth and the custom mechanism
+Some routes use the `verify_password` from HTTPAuth to protect API routes
+
+navigating to /logout will clear the session and send 401 logout for HTTPAuth 
+browser clearing
+"""
 @app.route('/login',methods=['GET','POST'])
 def showLogin():
     if request.method == 'GET':
@@ -136,16 +160,13 @@ def gconnect():
     login_session['provider'] = 'google'
     # see if user exists, if not make it
     userID = get_user_id_from_email(login_session['email'])
-    # import pdb
-    # pdb.set_trace()
+
     if userID is None:
         # print('No user ID found, creating user')
         userID = createUser(login_session)
         login_session['user_id'] = userID
     else:
         login_session['user_id'] = userID
-        
-
     output = ''
     output += '<h1>Welcome, '
     output += login_session['username']
@@ -155,8 +176,6 @@ def gconnect():
     output += ' " style = "width: 300px; height: 300px;border-radius: 150px;-webkit-border-radius: 150px;-moz-border-radius: 150px;"> '
     flash("you are now logged in as %s" % login_session['username'])
     print( "done!")
-
-
     return output
 
 
@@ -201,7 +220,7 @@ def verify_password(usernameOrToken,password):
     # first see if the usernameOrToken is a token
     # if it is, it will pass back and ID, if not
     # it will send back None
-    # pdb.set_trace()
+
     user_id = User.verify_auth_token(usernameOrToken)
     if user_id:
         print("Looking for user_id {0}".format(user_id))
@@ -268,13 +287,9 @@ def create_user():
     if request.method == 'GET':
         return render_template('adduser.html')
 
-
-    
+   
 @app.route('/user/<int:user_id>')
 def getUser(user_id):
-    if 'username' not in login_session:
-        flash("Please login first!")
-        return redirect(url_for('index'))   
     user = get_user_from_id(user_id)
     if user is not None:
         print user.username
@@ -284,41 +299,39 @@ def getUser(user_id):
         print 'no user with id {0}'.format(user_id)
         return 'none'
 
-@app.route('/users')
-# @auth.login_required
-def getUsers():
-    if 'username' not in login_session:
-        flash("Please login first!")
-        return redirect(url_for('index'))    
-    users = get_all_users()
-
-    return jsonify(User=[user.serialize for user in users])
-
-
-# @app.route('/')
-# def main():
-#     categories = get_all_categories()
-#     return render_template('categories.html',categories=categories)
-@app.route('/landing')
-def landing():
-    categories = get_all_categories()
-    # recent_items = get_recent_items()
-    return render_template('landing.html',categories=categories)
-
+"""
+Catalog routes
+"""
 @app.route('/')
+@app.route('/dashboard')
+def dashboard():
+    categories = get_all_categories()
+    recent_items = get_recent_items()
+    return render_template('dashboard.html',categories=categories,items=recent_items)
+
+
+@app.route('/dashboard/<int:cat_id>/')
+def categoryDash(cat_id):
+    categories = get_all_categories()
+    category = get_category(cat_id)
+    recent_items = get_recent_items(category.id,100)
+    return render_template('category_dash.html',categories=categories,items=recent_items,category=category)
+
+
 @app.route('/categories')
 def index():
-    print request.headers
+    if 'username' not in login_session:
+        flash("Please login first!")
+        print( request.referrer )
+        return redirect(request.referrer ) 
     categories = get_all_categories()
-
     return render_template('categories.html',categories=categories)
+
 
 @app.route('/category/<int:cat_id>/')
 @app.route('/category/<int:cat_id>/show')
 def category(cat_id):
-
     category = get_category(cat_id)
-
     return render_template('category.html',category=category)       
 
 @app.route('/category/<int:cat_id>/category_items')
@@ -329,8 +342,17 @@ def categoryItems(cat_id):
     user = 'admin'
     return render_template('category_items.html',category=category,items=items,user=user)
 
+
+@app.route('/item/<int:item_id>/')
+def itemInfo(item_id):
+    item = get_item(item_id)
+    userLoggedIn = 0
+    if 'username' in login_session:
+        userLoggedIn = 1
+    return render_template('item.html',item=item,userLoggedIn=userLoggedIn)
+
+
 @app.route('/category/<int:cat_id>/category_items/new', methods=['GET', 'POST'])
-@auth.login_required
 def newItem(cat_id):
     if 'username' not in login_session:
         flash("Please login first!")
@@ -342,18 +364,21 @@ def newItem(cat_id):
     else:
         return render_template('new_category_item.html',cat_id=cat_id)
 
-@app.route('/category/<int:cat_id>/category_items/<int:item_id>/edit', methods=['GET', 'POST'])
-def editItem(cat_id, item_id):
+
+@app.route('/item/<int:item_id>/edit', methods=['GET', 'POST'])
+def editItem(item_id):
     if 'username' not in login_session:
         flash("Please login first!")
         return redirect(url_for('index'))
     if request.method == 'POST':
-        update_item(cat_id,item_id, request.form['name'], request.form['description'], request.form['price'])
+        update_item(request.form['cat_id'],item_id, request.form['name'], request.form['description'], request.form['price'])
         flash("Item updated!")
-        return redirect(url_for('categoryItems', cat_id=cat_id))
+        return redirect(url_for('itemInfo', item_id=item_id))
     else:
         item = get_item(item_id)
-        return render_template('edititem.html',item=item)
+        categories = get_all_categories()
+        return render_template('edititem.html',item=item,categories=categories)
+
 
 @app.route('/category/<int:cat_id>/category_items/<int:item_id>/delete', methods=['GET', 'POST'])
 def deleteItem(cat_id, item_id):
@@ -372,37 +397,6 @@ def deleteItem(cat_id, item_id):
         return render_template('deleteitem.html',item=item)
 
 
-## JSON routes
-@app.route('/category/<int:cat_id>/json', methods=['GET'])
-def getAllItemJson(cat_id):
-    cat = get_category(cat_id).serialize
-    # cat_json = cat.serialize
-    items = get_all_items(cat_id)
-    return_json = cat.copy()
-    return_json.update(Items=[item.serialize for item in items])
-    return jsonify(return_json)
-    # return  jsonify(Items=[item.serialize for item in items])
-
-
-@app.route('/category/<int:cat_id>/category_items/<int:item_id>/json', methods=['GET'])
-def getItemJson(cat_id, item_id):
-    item = get_item(item_id)
-    return jsonify(Items=item.serialize)
-
-## JSON routes
-@app.route('/categories/json', methods=['GET'])
-def getAllCategorysJson(cat_id):
-    categories = get_all_categories()
-    return jsonify(Restuarants=[res.serialize for res in categories])
-
-@app.route('/categories', methods=['GET'])
-def getAllCategories():
-    categories = get_all_categories()
-
-    return render_template('categories.html',categories=categories)
-
-
-
 @app.route('/category/new', methods=['GET', 'POST'])
 def newCategory():
     if 'username' not in login_session:
@@ -414,6 +408,7 @@ def newCategory():
         return redirect(url_for('getAllCategories'))
     else:
         return render_template('newcategory.html')
+
 
 @app.route('/category/<int:cat_id>/edit', methods=['GET', 'POST'])
 def editCategory(cat_id):
@@ -443,6 +438,73 @@ def deleteCategory(cat_id):
     else:
         category = get_category(cat_id)
         return render_template('deletecategory.html',category=category)
+
+
+"""
+Routes used exclusively for json
+"""
+@app.route('/category/<int:cat_id>/json', methods=['GET'])
+def getAllItemJson(cat_id):
+    cat = get_category(cat_id).serialize
+    # cat_json = cat.serialize
+    items = get_all_items(cat_id)
+    return_json = cat.copy()
+    return_json.update(Items=[item.serialize for item in items])
+    return jsonify(return_json)
+
+
+@app.route('/item/<int:item_id>/json', methods=['GET'])
+def getItemJson(item_id):
+    item = get_item(item_id)
+    return jsonify(Items=item.serialize)
+
+
+@app.route('/categories/json', methods=['GET'])
+def getAllCategorysJson():
+    categories = get_all_categories()
+    return jsonify(Categories=[res.serialize for res in categories])
+
+
+@app.route('/fullcatalog/json', methods=['GET'])
+def getFullCatalogJson():
+    return_json = []
+    categories = get_all_categories()
+
+    for category in categories:
+        temp = category.serialize.copy()
+        items = get_all_items(category.id)
+        temp.update(Items=[item.serialize for item in items])
+        return_json.append(temp)
+    return jsonify(return_json)
+
+
+
+@app.route('/allitems/json', methods=['GET'])
+def getAllItems():
+    items = get_all_items()
+    Items=[item.serialize for item in items]
+    Categories=[{'name':'a'}]
+    return jsonify(Categories,Items)
+
+
+@app.route('/categories', methods=['GET'])
+def getAllCategories():
+    categories = get_all_categories()
+
+    return render_template('categories.html',categories=categories)
+
+@app.route('/users/json')
+@auth.login_required
+def getUsers():
+    if 'username' not in login_session:
+        flash("Please login first!")
+        return redirect(url_for('index'))    
+    users = get_all_users()
+    return jsonify(User=[user.serialize for user in users])
+
+# helper functions
+def userLoggedIn():
+    return 'username' in login_session
 
 if __name__ == '__main__':
     app.secret_key = 'TODO_GETFROMFILE'

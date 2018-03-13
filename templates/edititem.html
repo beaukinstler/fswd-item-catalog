@@ -11,7 +11,7 @@
 
 <h1> Edit Menu Item </h1>
 
-<form action="{{url_for('editItem', cat_id=item.cat_id, item_id=item.id )}}" method = 'POST'>
+<form action="{{url_for('editItem', item_id=item.id )}}" method = 'POST'>
 
 <p>Name:</p>
 
@@ -24,6 +24,18 @@
 <p>Description:</p>
 
 <input type='text' size='10' name='description' value="{{item.description}}">
+
+<p>Category:</p>
+
+
+        {% for cat in categories %}
+        <div class="radio">
+                <label>
+                        <input type="radio" name="cat_id" id=cat-id-{{cat.id}} value={{cat.id}} {% if item.cat_id == cat.id%}checked{%endif%}>{{cat.name}}
+                </label>
+        </div>
+       
+        {%endfor%}
 
 <input type='submit' value='Save'>
 

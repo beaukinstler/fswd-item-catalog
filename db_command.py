@@ -2,7 +2,7 @@
 This file stores the command db functions
 to access the database with the app.
 """
-from sqlalchemy import exc
+from sqlalchemy import exc, desc
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import random, string
@@ -103,7 +103,7 @@ def update_category(cat_id, name):
     category.name = name
     update_object(category)
 
-def get_all_items(cat_id):
+def get_all_items(cat_id=0):
     """ Using an ID, return a  item
 
     Args:
@@ -112,10 +112,30 @@ def get_all_items(cat_id):
     Returns:
     List of (Object.Item)  item objects
     """
-
-    items = ses.query(Item).filter_by(cat_id=cat_id)
+    if cat_id == 0:
+        items = ses.query(Item)
+    else:
+        items = ses.query(Item).filter_by(cat_id=cat_id)
     return items
 
+def get_recent_items(cat_id=0,limit_number=10):
+    """ 
+    Return a list of recent items
+
+    Args:
+    cat_id[optional] - (int) id from the category table, for which
+              to return
+    limit_number[optional] - defaults to 10
+
+    Returns:
+    List of (Object.Item) most recent added to db based
+    on the id number.
+    """
+    if cat_id == 0:
+        items = ses.query(Item).order_by(desc(Item.id)).limit(limit_number)
+    else:
+        items = ses.query(Item).filter_by(cat_id=cat_id).order_by(desc(Item.id)).limit(limit_number)
+    return items
 
 def get_item(id_to_find):
     """ Using an ID, return a  item
@@ -174,6 +194,8 @@ def update_item(cat_id, item_id, name, description, price):
         item.description = str(description)
     if str(price) != "":
         item.price = str(price)
+    if str(cat_id) != "":
+        item.cat_id = str(cat_id)
 
     update_object(item)
 
