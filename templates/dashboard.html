@@ -27,6 +27,12 @@
                     <a href="{{url_for('categoryDash', cat_id=cat.id)}}">{{cat.name}}</a>
                 </div>
                 {% endfor %}
+                {% if userLoggedIn == 1 %}
+                <div>
+                    <br>
+                     <a href="{{url_for('newCategory')}}">Create new category</a>
+                </div>
+                {% endif %}
             </div>
             <div class="col-sm-8" style="background-color:rgb(184, 235, 236);">
                 <h4>Recent Items</h4>
@@ -35,6 +41,7 @@
                     <a href="{{url_for('itemInfo', item_id=item.id)}}">{{item.name}}</a>
                 </div>
                 {% endfor %}
+
             </div>
         </div>
       </div>

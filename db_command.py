@@ -243,6 +243,25 @@ def add_user(username,password,email):
     else:
         return None
 
+def update_user(username,password,email):
+    """
+    Add a new user, return None if not able
+    """
+    user = get_user(username) if get_user(username) is not None else get_user(email)
+    if user is not None:
+        if str(username) != '':
+            user.username = str(username)
+        if str(email) != '':
+            user.email = str(email)
+        if str(password) != '':
+            user.hash_password(password)
+        
+        ses.add(user)
+        ses.commit()
+        return get_user(username).id
+    else:
+        return None
+
 def get_all_users():
     return ses.query(User)    
 

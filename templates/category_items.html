@@ -1,26 +1,15 @@
-<html>
-        <head>
-                <title>Catalog - Category Items</title>
-                <meta charset="utf-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1">
-                <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
-                <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-                <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
-              </head>
+{% extends "main.html" %}
+{% block title %}{{category.name}}{% endblock %}
 
-<body  class='pane'>
+{% block head %}
+{{ super() }}
 
-<h1 class="header">{{category.name}}</h1>
+{% endblock %}
 
-{% with messages = get_flashed_messages() %}
-{% if messages %}
-<ul>
-    {% for message in messages %}
-    <li> <strong> <span class="flash">{{ message }}</span> </strong></li>
-    {% endfor %}
-</ul>
-{% endif %}
-{% endwith %}
+{% block pageheader %}{{category.name}}{% endblock %}
+
+{% block content %}
+{{ super() }}
 
 <div><a href="{{url_for('newItem', cat_id=category.id,)}}">Create a new item</a></div>
 {% if items[0] != null %}
@@ -40,7 +29,7 @@
 
 
 
-{% if user == 'admin' %}
+{% if userLoggedIn == 1 %}
 <div class="editdeletepane">
 <a href="{{url_for('editItem', cat_id=category.id, item_id=i.id)}}">Edit</a>
 <a href="{{url_for('deleteItem', cat_id=category.id, item_id=i.id)}}">Delete</a>
@@ -52,7 +41,4 @@
 <div class="flash pane">Whoops!  This category doesn't have any items. Check back after they've set the tables</div>
 {% endif %}
 </div>
-
-</body>
-
-</html>
+{% endblock %}

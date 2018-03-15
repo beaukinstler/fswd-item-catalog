@@ -19,8 +19,17 @@
             <div class="col-sm-4" style="background-color:rgb(241, 234, 207);">
                 <h4>Categories</h4>
                 <div>
-                    <em>>{{category.name}}</em>
-                </div>               
+                    <strong>{{category.name}}</strong>
+                    </div>  
+                    {% if globalUserLoggedIn == 1 %}
+                    <div>
+                        <a href="{{url_for('editCategory',cat_id=category.id)}}">Edit</a>
+                        |<a href="{{url_for('deleteCategory',cat_id=category.id)}}">Delete</a>                     
+                        |<a href="{{url_for('newCategory')}}">New</a>
+                    </div>
+                    {% endif %}
+                <br>
+                <strong>Other categories:</strong>          
                 {% for cat in categories %}
                 {% if cat.id != category.id %}
                 <div>
@@ -28,6 +37,8 @@
                 </div>
                 {% endif %}
                 {% endfor %}
+
+
             </div>
             <div class="col-sm-8" style="background-color:rgb(184, 235, 236);">
                 <h4>{{category.name}} <span class="text-muted">({{items.count()}})</span></h4>
@@ -36,6 +47,11 @@
                     <a href="{{url_for('itemInfo', item_id=item.id)}}">{{item.name}}</a>
                 </div>
                 {% endfor %}
+                {% if globalUserLoggedIn == 1 %}
+                <div>
+                     <a href="{{url_for('newItem', cat_id=category.id)}}"><br>Create new item for category: {{category.name}}</a>
+                </div>
+                {% endif %}
             </div>
         </div>
       </div>

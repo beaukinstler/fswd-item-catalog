@@ -79,9 +79,10 @@ def showLogin():
                 login_session['username'] = user.username
                 login_session['email'] = user.email
                 flash("you are now logged in as %s" % login_session['username'])
-                return redirect(url_for('index'))
+                return redirect(url_for('dashboard'))
             else:
-                return "password didn't match"
+                flash("Password failed")
+                return redirect(url_for('dashboard'))
 
 
 @app.route('/gconnect', methods=['GET','POST'])
@@ -266,7 +267,7 @@ def create_user():
         return redirect(url_for('createInitialAdmin'))
     if 'username' not in login_session:
         flash("Please login first!")
-        return redirect(url_for('index'))        
+        return redirect(url_for('dashboard'))        
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
@@ -287,7 +288,41 @@ def create_user():
     if request.method == 'GET':
         return render_template('adduser.html')
 
-   
+@app.route('/user/<int:id>/edit', methods = ['GET','POST'])
+def editUser(id):
+    if 'username' not in login_session:
+        flash("Please login first!")
+        return redirect(url_for('dashboard'))        
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        email = request.form['email']
+        if username is not None and \
+        password is not None and \
+        id == get_user(login_session['username']).id:
+            user_id = update_user(username,password,email)
+            flash("User updated")
+            return redirect(url_for('currentUser'))
+        else:
+            print """Error: could not find password or username in 
+                    post request, or username already exists"""
+            return """Error: could not find password or username in 
+                    post request, or username already exists"""
+
+    if request.method == 'GET':
+        user = get_user(login_session['username'])
+        return render_template('changepassword.html',user=user)
+
+@app.route('/user')
+def currentUser():
+    if 'username' in login_session:
+        username = login_session['username']
+        user = get_user(username)
+        return render_template('user.html',user=user)
+    else:
+        flash("couldn't find user in session, please try logging in")
+        return redirect(url_for('dashboard'))
+
 @app.route('/user/<int:user_id>')
 def getUser(user_id):
     user = get_user_from_id(user_id)
@@ -307,7 +342,7 @@ Catalog routes
 def dashboard():
     categories = get_all_categories()
     recent_items = get_recent_items()
-    return render_template('dashboard.html',categories=categories,items=recent_items)
+    return render_template('dashboard.html',categories=categories,items=recent_items,userLoggedIn=userLoggedIn())
 
 
 @app.route('/dashboard/<int:cat_id>/')
@@ -315,7 +350,9 @@ def categoryDash(cat_id):
     categories = get_all_categories()
     category = get_category(cat_id)
     recent_items = get_recent_items(category.id,100)
-    return render_template('category_dash.html',categories=categories,items=recent_items,category=category)
+    return render_template('category_dash.html',categories=categories,
+                            items=recent_items,category=category,
+                            userLoggedIn=userLoggedIn())
 
 
 @app.route('/categories')
@@ -325,51 +362,49 @@ def index():
         print( request.referrer )
         return redirect(request.referrer ) 
     categories = get_all_categories()
-    return render_template('categories.html',categories=categories)
+    return render_template('categories.html',categories=categories,userLoggedIn=userLoggedIn())
 
 
 @app.route('/category/<int:cat_id>/')
 @app.route('/category/<int:cat_id>/show')
 def category(cat_id):
     category = get_category(cat_id)
-    return render_template('category.html',category=category)       
+    return render_template('category.html',category=category,userLoggedIn=userLoggedIn())       
 
 @app.route('/category/<int:cat_id>/category_items')
 def categoryItems(cat_id):
     category = session.query(Category).filter_by(id=cat_id).one()
     items = session.query(Item).filter_by(cat_id=category.id)
-    # return output
-    user = 'admin'
-    return render_template('category_items.html',category=category,items=items,user=user)
+    return render_template('category_items.html',category=category,items=items,userLoggedIn=userLoggedIn())
 
 
 @app.route('/item/<int:item_id>/')
 def itemInfo(item_id):
     item = get_item(item_id)
-    userLoggedIn = 0
-    if 'username' in login_session:
-        userLoggedIn = 1
-    return render_template('item.html',item=item,userLoggedIn=userLoggedIn)
+    # userLoggedIn = 0
+    # if 'username' in login_session:
+    #     userLoggedIn = 1
+    return render_template('item.html',item=item,userLoggedIn=userLoggedIn())
 
 
 @app.route('/category/<int:cat_id>/category_items/new', methods=['GET', 'POST'])
 def newItem(cat_id):
     if 'username' not in login_session:
         flash("Please login first!")
-        return redirect(url_for('index'))
+        return redirect(url_for('dashboard'))
     if request.method == 'POST':
         new_id = add_item(cat_id,request.form['name'],request.form['description'],request.form['price'])
         flash("New item created!")
-        return redirect(url_for('categoryItems', cat_id=cat_id))
+        return redirect(url_for('categoryDash', cat_id=cat_id))
     else:
-        return render_template('new_category_item.html',cat_id=cat_id)
+        return render_template('new_category_item.html',cat_id=cat_id,userLoggedIn=userLoggedIn())
 
 
 @app.route('/item/<int:item_id>/edit', methods=['GET', 'POST'])
 def editItem(item_id):
     if 'username' not in login_session:
         flash("Please login first!")
-        return redirect(url_for('index'))
+        return redirect(url_for('dashboard'))
     if request.method == 'POST':
         update_item(request.form['cat_id'],item_id, request.form['name'], request.form['description'], request.form['price'])
         flash("Item updated!")
@@ -377,51 +412,51 @@ def editItem(item_id):
     else:
         item = get_item(item_id)
         categories = get_all_categories()
-        return render_template('edititem.html',item=item,categories=categories)
+        return render_template('edititem.html',item=item,categories=categories,userLoggedIn=userLoggedIn())
 
 
 @app.route('/category/<int:cat_id>/category_items/<int:item_id>/delete', methods=['GET', 'POST'])
 def deleteItem(cat_id, item_id):
     if 'username' not in login_session:
         flash("Please login first!")
-        return redirect(url_for('index'))    
+        return redirect(url_for('dashboard'))    
     if request.method == 'POST':
         if request.form['delete'] == 'Delete':
             delete_item(item_id)
             flash("Item deleted!")
         elif request.form['delete'] == 'Cancel':
             pass
-        return redirect(url_for('categoryItems', cat_id=cat_id))
+        return redirect(url_for('categoryDash', cat_id=cat_id))
     else:
         item = get_item(item_id)
-        return render_template('deleteitem.html',item=item)
+        return render_template('deleteitem.html',item=item,userLoggedIn=userLoggedIn())
 
 
 @app.route('/category/new', methods=['GET', 'POST'])
 def newCategory():
     if 'username' not in login_session:
         flash("Please login first!")
-        return redirect(url_for('index'))
+        return redirect(url_for('dashboard'),userLoggedIn=userLoggedIn())
     if request.method == 'POST':
         new_id = add_category(request.form['name'])
         flash("Category added!")
-        return redirect(url_for('getAllCategories'))
+        return redirect(url_for('categoryDash', cat_id=new_id))
     else:
-        return render_template('newcategory.html')
+        return render_template('newcategory.html',userLoggedIn=userLoggedIn())
 
 
 @app.route('/category/<int:cat_id>/edit', methods=['GET', 'POST'])
 def editCategory(cat_id):
     if 'username' not in login_session:
         flash("Please login first!")
-        return redirect(url_for('category',cat_id=cat_id))
+        return redirect(url_for('category',cat_id=cat_id),userLoggedIn=userLoggedIn())
     if request.method == 'POST':
         update_category(cat_id, request.form['name'])
         flash("Category updated!")
-        return redirect(url_for('getAllCategories'))
+        return redirect(url_for('categoryDash',cat_id=cat_id))
     else:
         category = get_category(cat_id)
-        return render_template('editcategory.html',category=category)
+        return render_template('editcategory.html',category=category,userLoggedIn=userLoggedIn())
 
 @app.route('/category/<int:cat_id>/delete', methods=['GET','POST'])
 def deleteCategory(cat_id):
@@ -434,7 +469,7 @@ def deleteCategory(cat_id):
             flash("Category deleted!")
         elif request.form['delete'] == 'Cancel':
             pass
-        return redirect(url_for('getAllCategories'))
+        return redirect(url_for('dashboard'))
     else:
         category = get_category(cat_id)
         return render_template('deletecategory.html',category=category)
@@ -498,13 +533,14 @@ def getAllCategories():
 def getUsers():
     if 'username' not in login_session:
         flash("Please login first!")
-        return redirect(url_for('index'))    
+        return redirect(url_for('dashboard'))    
     users = get_all_users()
     return jsonify(User=[user.serialize for user in users])
 
 # helper functions
+@app.context_processor
 def userLoggedIn():
-    return 'username' in login_session
+    return dict(globalUserLoggedIn=1 if 'username' in login_session  else 0)
 
 if __name__ == '__main__':
     app.secret_key = 'TODO_GETFROMFILE'

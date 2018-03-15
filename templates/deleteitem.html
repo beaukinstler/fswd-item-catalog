@@ -1,15 +1,15 @@
-<html>
-        <head>
-                <title>Catalog - Categories</title>
-                <meta charset="utf-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1">
-                <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
-                <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-                <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
-        </head>
-<body>
-<h1> Delete Item </h1>
+{% extends "main.html" %}
+{% block title %}Delete Item{% endblock %}
 
+{% block head %}
+{{ super() }}
+
+{% endblock %}
+
+{% block pageheader %}Delete {{item.name}}{% endblock %}
+
+{% block content %}
+{{ super() }}
 <form action="{{url_for('deleteItem', cat_id=item.cat_id, item_id=item.id )}}" method = 'POST'>
 
 <p>Are you sure you want to delete:</p>
@@ -21,6 +21,4 @@
 
 
 </form>
-
-</body>
-</html>
+{% endblock %}

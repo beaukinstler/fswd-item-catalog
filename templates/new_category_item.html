@@ -1,14 +1,15 @@
-<html>
-        <head>
-                <title>Catalog - New Item</title>
-                <meta charset="utf-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1">
-                <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
-                <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-                <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
-        </head>
-<body>
-<h1> New Item </h1>
+{% extends "main.html" %}
+{% block title %}New Item{% endblock %}
+
+{% block head %}
+{{ super() }}
+
+{% endblock %}
+
+{% block pageheader %}New Item{% endblock %}
+
+{% block content %}
+{{ super() }}
 
 <form action="{{url_for('newItem', cat_id=cat_id )}}" method = 'POST'>
 
@@ -27,6 +28,4 @@
 <input type='submit' value='Create'>
 
 </form>
-
-</body>
-</html>
+{% endblock %}
