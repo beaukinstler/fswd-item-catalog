@@ -177,14 +177,13 @@ def gconnect():
     else:
         login_session['user_id'] = userID
     output = ''
-    output += '<h1>Welcome, '
+    output += '<h2>Welcome, '
     output += login_session['username']
-    output += '!</h1>'
+    output += '!</h2>'
     output += '<img src="'
     output += login_session['picture']
-    output += ' " style = "width: 300px; height: 300px;border-radius: 150px;-webkit-border-radius: 150px;-moz-border-radius: 150px;"> '
-    flash("you are now logged in as %s" % login_session['username'])
-    print( "done!")
+    output += ' " style = "width: 60px; height: 60px; border-radius: 500px"> '
+    flash("Now logged in as {0}".format(login_session['username']))
     return output
 
 
@@ -312,6 +311,7 @@ def create_user():
 
 @app.route('/user/<int:id>/edit', methods = ['GET','POST'])
 def editUser(id):
+
     if 'username' not in login_session:
         flash("Please login first!")
         return redirect(url_for('dashboard'))        
@@ -360,13 +360,13 @@ def currentUser():
         # may need to look up using email instead for OAuth accounts
         # the user will be None if it wasn't found
         user = get_user_from_email(email) if user is None else user
-        pdb.set_trace()
         return render_template('user.html',user=user)
     else:
         flash("couldn't find user in session, please try logging in")
         return redirect(url_for('dashboard'))
 
 @app.route('/user/<int:user_id>')
+@auth.verify_password
 def getUser(user_id):
     user = get_user_from_id(user_id)
     if user is not None:

@@ -1,5 +1,5 @@
 {% extends "main.html" %}
-{% block title %}Category List{% endblock %}
+{% block title %}Login Page{% endblock %}
 
 {% block head %}
 {{ super() }}
@@ -25,7 +25,7 @@
             data-approvalprompt="force">
         </span>
     </div>
-    <div id='result'>
+    <div width="100" height="80" id='result'>
 
     </div>
     <script>
@@ -33,7 +33,11 @@
     function signInCallback(authResult) {
         if (authResult['code']) {
             // Hide the sign-in button now that the user is authorized
-            $('#signinButton').attr('style', 'display: none');
+            $('#signinButton').hide();
+
+            // hide the custom login form and set #result to 'waiting'
+            $('#result').html('Sending login request to Google...!</br></br>Please stand by...')
+            $('#customLoginForm').hide();
             // Send the one-time-use code to the server, if the server responds, write a 'login successful' message to the web page and then redirect back to the main restaurants page
             $.ajax({
                 type: 'POST',
@@ -45,7 +49,10 @@
                     // Handle or verify the server response if necessary.
                     console.log("Debug: result: " + result)
                     if (result) {
-                        $('#result').html('Login Successful!</br>'+ result + '</br>Redirecting...')
+                        result_html = 'Login Successful!</br>';
+                        result_html += '<div height="10" width="10">' + result +'</div>';
+                        result_html += '</br></br>Redirecting...'
+                        $('#result').html(result_html)
                         setTimeout(
                             function() {
                                 window.location.href = "/";
@@ -66,8 +73,9 @@
     </script>
 
 <!-- custom login form -->
-    <h3>Login with an account</h3>
-    <form action="{{url_for('showLogin', username=username, password=password, email=email )}}" method = 'POST' >
+<div id="customLoginForm">
+<h3>Login with an account</h3>
+    <form  action="{{url_for('showLogin', username=username, password=password, email=email )}}" method='POST' >
         <input name=state type=hidden value="{{STATE}}">
         <p>UserName:</p>
 
@@ -86,5 +94,5 @@
         <a href="{{url_for('showLogin')}}">Cancel</a>
 
     </form>
-
+</div>
 {% endblock %}
