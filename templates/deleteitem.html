@@ -17,8 +17,9 @@
 <p>{{item.name}}</p>
 
 <input type='submit' name='delete' value='Delete'>
-<input type='submit' name='delete' value='Cancel'>
 
+
+<a href="{{url_for('itemInfo', item_id=item.id)}}">Cancel</a>
 
 </form>
 {% endblock %}

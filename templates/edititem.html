@@ -38,7 +38,5 @@
         {%endfor%}
 
 <input type='submit' value='Save'>
-
-<a href="{{url_for('categoryItems', cat_id=item.cat_id)}}">Cancel</a>
-
+<a href="{{url_for('itemInfo', item_id=item.id)}}">Cancel</a>
 {% endblock %}
