@@ -228,6 +228,13 @@ def get_user_id_from_email(email):
     except:
         return None
 
+def get_user_from_email(email):
+    try:
+        user = ses.query(User).filter_by(email=email).first()
+        return user
+    except:
+        return None
+
 def add_user(username,password,email):
     """
     Add a new user, return None if not able

@@ -58,12 +58,20 @@ browser clearing
 @app.route('/login',methods=['GET','POST'])
 def showLogin():
     if request.method == 'GET':
-        state = ''.join(random.choice(string.ascii_uppercase + string.digits)
-                        for x in range(32))
+        # Treat as GET request with a state token
+        # to protect CSRF
+        state = get_state_token()
         login_session['state'] = state
         print("The current session state is {0}".format(login_session['state']))
         return render_template('login.html', STATE=state)
     if request.method == 'POST':
+        # Protect for CRSF
+        response = bad_state(
+                request.form['state'],
+                login_session['state'])
+        if response is not None:
+            return response
+
         username = request.form['username']
         password = request.form['password']
         email = request.form['email']
@@ -269,9 +277,19 @@ def create_user():
         flash("Please login first!")
         return redirect(url_for('dashboard'))        
     if request.method == 'POST':
+        # Protect for CRSF
+        response = bad_state(
+                request.form['state'],
+                login_session['state'])
+        if response is not None:
+            return response
+
+        # Get fields from form    
         username = request.form['username']
         password = request.form['password']
         email = request.form['email']
+
+        # Ensure fields have data and username doesn't exist
         if username is not None and \
         password is not None and \
         get_user(username) is None and \
@@ -286,7 +304,11 @@ def create_user():
                     post request, or username already exists"""
 
     if request.method == 'GET':
-        return render_template('adduser.html')
+        # Treat as GET request with a state token
+        # to protect CSRF
+        state = get_state_token()
+        login_session['state'] = state
+        return render_template('adduser.html',STATE=state)
 
 @app.route('/user/<int:id>/edit', methods = ['GET','POST'])
 def editUser(id):
@@ -294,12 +316,24 @@ def editUser(id):
         flash("Please login first!")
         return redirect(url_for('dashboard'))        
     if request.method == 'POST':
+        # Protect for CRSF
+        response = bad_state(
+                request.form['state'],
+                login_session['state'])
+        if response is not None:
+            return response
+
+        # Get user input from form
         username = request.form['username']
         password = request.form['password']
         email = request.form['email']
-        if username is not None and \
-        password is not None and \
-        id == get_user(login_session['username']).id:
+
+        # Ensure the fields have data
+        # and the user making the post is the 
+        # logged in user from the session
+        if (username is not None and 
+                password is not None and 
+                id == get_user(login_session['username']).id):
             user_id = update_user(username,password,email)
             flash("User updated")
             return redirect(url_for('currentUser'))
@@ -310,14 +344,23 @@ def editUser(id):
                     post request, or username already exists"""
 
     if request.method == 'GET':
+        # Treat as GET request with a state token
+        # to protect CSRF
+        state = get_state_token()
+        login_session['state'] = state
         user = get_user(login_session['username'])
-        return render_template('changepassword.html',user=user)
+        return render_template('changepassword.html',user=user,STATE=state)
 
 @app.route('/user')
 def currentUser():
     if 'username' in login_session:
         username = login_session['username']
+        email = login_session['email']
         user = get_user(username)
+        # may need to look up using email instead for OAuth accounts
+        # the user will be None if it wasn't found
+        user = get_user_from_email(email) if user is None else user
+        pdb.set_trace()
         return render_template('user.html',user=user)
     else:
         flash("couldn't find user in session, please try logging in")
@@ -393,11 +436,27 @@ def newItem(cat_id):
         flash("Please login first!")
         return redirect(url_for('dashboard'))
     if request.method == 'POST':
-        new_id = add_item(cat_id,request.form['name'],request.form['description'],request.form['price'])
+        # Protect for CRSF
+        response = bad_state(
+                request.form['state'],
+                login_session['state'])
+        if response is not None:
+            return response
+
+        # Create a new item from the request
+        new_id = add_item(
+                cat_id,request.form['name'],
+                request.form['description'],
+                request.form['price'])
         flash("New item created!")
         return redirect(url_for('categoryDash', cat_id=cat_id))
     else:
-        return render_template('new_category_item.html',cat_id=cat_id,userLoggedIn=userLoggedIn())
+        # Treat as GET request with a state token
+        # to protect CSRF
+        state = get_state_token()
+        login_session['state'] = state
+        return render_template('new_category_item.html',cat_id=cat_id,
+                               userLoggedIn=userLoggedIn(),STATE=state)
 
 
 @app.route('/item/<int:item_id>/edit', methods=['GET', 'POST'])
@@ -406,13 +465,29 @@ def editItem(item_id):
         flash("Please login first!")
         return redirect(url_for('dashboard'))
     if request.method == 'POST':
-        update_item(request.form['cat_id'],item_id, request.form['name'], request.form['description'], request.form['price'])
+        # Protect for CRSF
+        response = bad_state(
+                request.form['state'],
+                login_session['state'])
+        if response is not None:
+            return response
+
+        # Update the item details
+        update_item(request.form['cat_id'],item_id,
+                    request.form['name'], request.form['description'],
+                    request.form['price'])
         flash("Item updated!")
         return redirect(url_for('itemInfo', item_id=item_id))
     else:
+        # Treat as GET request with a state token
+        # to protect CSRF
+        state = get_state_token()
+        login_session['state'] = state
         item = get_item(item_id)
         categories = get_all_categories()
-        return render_template('edititem.html',item=item,categories=categories,userLoggedIn=userLoggedIn())
+        return render_template('edititem.html',item=item,
+                               categories=categories,
+                               userLoggedIn=userLoggedIn(),STATE=state)
 
 
 @app.route('/category/<int:cat_id>/category_items/<int:item_id>/delete', methods=['GET', 'POST'])
@@ -421,6 +496,14 @@ def deleteItem(cat_id, item_id):
         flash("Please login first!")
         return redirect(url_for('dashboard'))    
     if request.method == 'POST':
+        # Protect for CRSF
+        response = bad_state(
+                request.form['state'],
+                login_session['state'])
+        if response is not None:
+            return response
+
+        # Delete or Cancel based on the value of delete field
         if request.form['delete'] == 'Delete':
             delete_item(item_id)
             flash("Item deleted!")
@@ -428,8 +511,12 @@ def deleteItem(cat_id, item_id):
             pass
         return redirect(url_for('categoryDash', cat_id=cat_id))
     else:
+        # Treat as GET request with a state token
+        # to protect CSRF
+        state = get_state_token()
+        login_session['state'] = state
         item = get_item(item_id)
-        return render_template('deleteitem.html',item=item,userLoggedIn=userLoggedIn())
+        return render_template('deleteitem.html',item=item,userLoggedIn=userLoggedIn(),STATE=state)
 
 
 @app.route('/category/new', methods=['GET', 'POST'])
@@ -438,11 +525,22 @@ def newCategory():
         flash("Please login first!")
         return redirect(url_for('dashboard'),userLoggedIn=userLoggedIn())
     if request.method == 'POST':
+        # Protect for CRSF
+        response = bad_state(
+                request.form['state'],
+                login_session['state'])
+        if response is not None:
+            return response
+
         new_id = add_category(request.form['name'])
         flash("Category added!")
         return redirect(url_for('categoryDash', cat_id=new_id))
     else:
-        return render_template('newcategory.html',userLoggedIn=userLoggedIn())
+        # Treat as GET request with a state token
+        # to protect CSRF
+        state = get_state_token()
+        login_session['state'] = state
+        return render_template('newcategory.html',userLoggedIn=userLoggedIn(),STATE=state)
 
 
 @app.route('/category/<int:cat_id>/edit', methods=['GET', 'POST'])
@@ -451,12 +549,23 @@ def editCategory(cat_id):
         flash("Please login first!")
         return redirect(url_for('category',cat_id=cat_id),userLoggedIn=userLoggedIn())
     if request.method == 'POST':
+        # Protect for CRSF
+        response = bad_state(
+                request.form['state'],
+                login_session['state'])
+        if response is not None:
+            return response
+
         update_category(cat_id, request.form['name'])
         flash("Category updated!")
         return redirect(url_for('categoryDash',cat_id=cat_id))
     else:
+        # Treat as GET request with a state token
+        # to protect CSRF
+        state = get_state_token()
+        login_session['state'] = state
         category = get_category(cat_id)
-        return render_template('editcategory.html',category=category,userLoggedIn=userLoggedIn())
+        return render_template('editcategory.html',category=category,userLoggedIn=userLoggedIn(),STATE=state)
 
 @app.route('/category/<int:cat_id>/delete', methods=['GET','POST'])
 def deleteCategory(cat_id):
@@ -464,6 +573,13 @@ def deleteCategory(cat_id):
         flash("Please login first!")
         return redirect(url_for('category',cat_id=cat_id))
     if request.method == 'POST':
+        # Protect for CRSF
+        response = bad_state(
+                request.form['state'],
+                login_session['state'])
+        if response is not None:
+            return response
+
         if request.form['delete'] == 'Delete':
             delete_category(cat_id)
             flash("Category deleted!")
@@ -471,8 +587,12 @@ def deleteCategory(cat_id):
             pass
         return redirect(url_for('dashboard'))
     else:
+        # Treat as GET request with a state token
+        # to protect CSRF
+        state = get_state_token()
+        login_session['state'] = state
         category = get_category(cat_id)
-        return render_template('deletecategory.html',category=category)
+        return render_template('deletecategory.html',category=category,STATE=state)
 
 
 """
@@ -541,6 +661,26 @@ def getUsers():
 @app.context_processor
 def userLoggedIn():
     return dict(globalUserLoggedIn=1 if 'username' in login_session  else 0)
+
+def get_state_token():
+    """
+    Create a random string for use int state tokens for CRSF protection
+    """
+    token = ''.join(random.choice(string.ascii_uppercase + string.digits)
+                    for x in range(32))
+    return token
+
+def bad_state(request_token,session_token):
+    if request.form['state'] != login_session['state']:
+            response = make_response(json.dumps('Invalid state parameter.'), 401)
+            response.headers['Content-Type'] = 'application/json'
+
+    else:
+        response = None
+   
+    return response
+    
+
 
 if __name__ == '__main__':
     app.secret_key = 'TODO_GETFROMFILE'

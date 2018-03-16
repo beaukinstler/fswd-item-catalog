@@ -67,8 +67,8 @@
 
 <!-- custom login form -->
     <h3>Login with an account</h3>
-    <form action="{{url_for('showLogin', username=username, password=password, email=email )}}" method = 'POST'>
-
+    <form action="{{url_for('showLogin', username=username, password=password, email=email )}}" method = 'POST' >
+        <input name=state type=hidden value="{{STATE}}">
         <p>UserName:</p>
 
         <input type='text' size='30' name='username' value="">
