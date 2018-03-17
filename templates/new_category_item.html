@@ -19,7 +19,7 @@
 
 <p>Price:</p>
 
-<input type='text' size='10' name='price' placeholder="99.99">
+<input type='text' size='10' name='price' placeholder="$99.99">
 
 <p>Description:</p>
 
@@ -31,7 +31,7 @@
         {% for cat in categories %}
         <div class="radio">
                 <label>
-                        <input type="radio" name="cat_id" id="cat-id-{{cat.id}}" value="{{cat.id}}" >{{cat.name}}
+                        <input type="radio" name="cat_id" id="cat-id-{{cat.id}}" value="{{cat.id}}" {% if cat.id == cat_id%}checked{%endif%} >{{cat.name}}
                 </label>
         </div>
        
