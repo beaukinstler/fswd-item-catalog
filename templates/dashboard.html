@@ -27,7 +27,7 @@
                     <a href="{{url_for('categoryDash', cat_id=cat.id)}}">{{cat.name}}</a>
                 </div>
                 {% endfor %}
-                {% if userLoggedIn == 1 %}
+                {% if globalUserLoggedIn == 1 %}
                 <div>
                     <br>
                      <a href="{{url_for('newCategory')}}">Create new category</a>
@@ -41,7 +41,11 @@
                     <a href="{{url_for('itemInfo', item_id=item.id)}}">{{item.name}}</a>
                 </div>
                 {% endfor %}
-
+                {% if globalUserLoggedIn == 1 %}
+                <div>
+                     <a href="{{url_for('newItem', cat_id=0)}}"><br>Create new item</a>
+                </div>
+                {% endif %}
             </div>
         </div>
       </div>

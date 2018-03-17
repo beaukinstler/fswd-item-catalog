@@ -15,9 +15,17 @@ import json
 from flask.ext.httpauth import HTTPBasicAuth
 from flask import make_response
 
+SUPER_SECRET_KEY = (
+        json.loads(
+            open('secrets.json', 'r')
+            .read())['super_secret_key']
+    )
 
-CLIENT_ID = json.loads( open('client_secrets.json', 'r').read())['web']['client_id']
-
+CLIENT_ID = (
+        json.loads(
+            open('client_secrets.json', 'r')
+            .read())['web']['client_id']
+    )
 
 auth = HTTPBasicAuth()
 
@@ -432,6 +440,7 @@ def itemInfo(item_id):
 
 @app.route('/category/<int:cat_id>/category_items/new', methods=['GET', 'POST'])
 def newItem(cat_id):
+
     if 'username' not in login_session:
         flash("Please login first!")
         return redirect(url_for('dashboard'))
@@ -445,18 +454,24 @@ def newItem(cat_id):
 
         # Create a new item from the request
         new_id = add_item(
-                cat_id,request.form['name'],
+                request.form['cat_id'],request.form['name'],
                 request.form['description'],
                 request.form['price'])
         flash("New item created!")
-        return redirect(url_for('categoryDash', cat_id=cat_id))
+        new_cat_id = get_item(new_id).cat_id 
+        if new_cat_id is None:
+            return redirect(url_for('dashboard'))
+        else:
+            return redirect(url_for('categoryDash', cat_id=new_cat_id))
     else:
         # Treat as GET request with a state token
         # to protect CSRF
         state = get_state_token()
         login_session['state'] = state
+        categories = get_all_categories()
         return render_template('new_category_item.html',cat_id=cat_id,
-                               userLoggedIn=userLoggedIn(),STATE=state)
+                               userLoggedIn=userLoggedIn(),
+                               categories=categories,STATE=state)
 
 
 @app.route('/item/<int:item_id>/edit', methods=['GET', 'POST'])
@@ -683,6 +698,6 @@ def bad_state(request_token,session_token):
 
 
 if __name__ == '__main__':
-    app.secret_key = 'TODO_GETFROMFILE'
+    app.secret_key = SUPER_SECRET_KEY
     app.debug = True
     app.run(host='0.0.0.0', port=5000)

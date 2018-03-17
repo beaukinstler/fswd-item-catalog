@@ -12,7 +12,7 @@
 {{ super() }}
 
 <form action="{{url_for('editItem', item_id=item.id )}}" method = 'POST'>
-
+<input name=state type=hidden value="{{STATE}}">
 <p>Name:</p>
 
 <input type='text' size='30' name='name' value="{{item.name}}">

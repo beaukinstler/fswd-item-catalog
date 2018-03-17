@@ -7,13 +7,23 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy import create_engine
 from passlib.apps import custom_app_context as app_context
-import random, string
-from itsdangerous import(TimedJSONWebSignatureSerializer as Serializer, BadSignature, SignatureExpired)
+import random
+import string
+from itsdangerous import(
+        TimedJSONWebSignatureSerializer as Serializer,
+        BadSignature,
+        SignatureExpired
+    )
 
 BASE = declarative_base()
 
 # This secret_key will be used to both encrypt and decrypt
-secret_key = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in xrange(32))
+secret_key = (
+        ''.join(random.choice(
+                string.ascii_uppercase + string.digits) for x in xrange(32)
+                )
+    )
+
 
 class User(BASE):
     __tablename__ = 'user'
@@ -28,9 +38,8 @@ class User(BASE):
 
     def verify_password(self, password):
         return app_context.verify(password, self.password_hash)
-    
 
-    def generate_auth_token(self,expiration=600):
+    def generate_auth_token(self, expiration=600):
         """
         Use itsdangerous.TimedJSONWebSignatureSerializer
         to encrypt a token, and the secret key created global
@@ -44,7 +53,7 @@ class User(BASE):
 
         Returns: encrypted token, containing id of the user
         """
-        s = Serializer(secret_key,expires_in=expiration)
+        s = Serializer(secret_key, expires_in=expiration)
         return s.dumps({'id': self.id})
 
     @property
@@ -53,15 +62,15 @@ class User(BASE):
         return {
             'name': self.username,
             'id': self.id,
-            'pass_hash': self.password_hash 
+            'pass_hash': self.password_hash
         }
 
     @staticmethod
     def verify_auth_token(token):
         """
-        Purpose: Decrypt a token and check for the user id. 
+        Purpose: Decrypt a token and check for the user id.
                  Exceptions are thrown for expired tokens,
-                 and for BadSignatures. If these exceptions 
+                 and for BadSignatures. If these exceptions
                  are found, "None" is returned
 
         Params: A token created with Serializer
@@ -79,11 +88,10 @@ class User(BASE):
         except BadSignature:
             print("Bad token: {0}".format(BadSignature.message))
             return None
-        
+
         print("if bad token,this shouldn't print")
         user_id = data['id']
         return user_id
-
 
 
 class Category(BASE):
@@ -102,8 +110,9 @@ class Category(BASE):
         """Return the object fields as JSON like format"""
         return {
             'name': self.name,
-            'id': self.id 
+            'id': self.id
         }
+
 
 class Item(BASE):
     """
@@ -130,14 +139,9 @@ class Item(BASE):
             'description': self.description,
             'id': self.id,
             'price': self.price,
-            'category':self.category.name,
-            'category_id':self.cat_id
+            'category': self.category.name,
+            'category_id': self.cat_id
         }
-
-
-
-
-
 
 ENGINE = create_engine('sqlite:///catalog.db')
 

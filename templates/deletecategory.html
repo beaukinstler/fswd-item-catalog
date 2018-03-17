@@ -12,7 +12,7 @@
 {{ super() }}
 
 <form action="{{url_for('deleteCategory', cat_id=category.id)}}" method = 'POST'>
-
+    <input name=state type=hidden value="{{STATE}}">
 <p>Are you sure you want to delete:</p>
 
 <p>{{category.name}}</p>
