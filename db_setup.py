@@ -62,7 +62,7 @@ class User(BASE):
         return {
             'name': self.username,
             'id': self.id,
-            'pass_hash': self.password_hash
+            'email': self.email
         }
 
     @staticmethod
