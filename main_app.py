@@ -367,8 +367,14 @@ def editUser(id):
         if (username is not None and
                 password is not None and
                 id == get_user(login_session['username']).id):
-            user_id = update_user(username, password, email)
-            flash("User updated")
+            user = update_user(username, password, email)
+            if user is not None:
+                flash("User updated")
+                login_session['username'] = user.username
+                login_session['email'] = user.email
+            else:
+                flash("""There was a problem. Please make sure you're
+                         using a unique username and email address.""")
             return redirect(url_for('currentUser'))
         else:
             print """Error: could not find password or username in

@@ -6,12 +6,12 @@
 
 {% endblock %}
 
-{% block pageheader %}Welcome {{user.username}}! {% endblock %}
+{% block pageheader %}Edit account "{{user.username}}" {% endblock %}
 
 {% block content %}
 {{ super() }}
 
-<a href="{{url_for('editUser', id=user.id)}}">Change password</a>
+<a href="{{url_for('editUser', id=user.id)}}">Edit</a>
 
 <p>User id: {{user.id}}</p>
 <p>UserName: {{user.username}}</p>

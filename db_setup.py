@@ -2,7 +2,7 @@
 This is a class to setup the data connections for a
 item catalog with categories web application
 """
-from sqlalchemy import Column, ForeignKey, Integer, String
+from sqlalchemy import Column, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy import create_engine
@@ -28,9 +28,9 @@ secret_key = (
 class User(BASE):
     __tablename__ = 'user'
     id = Column(Integer, primary_key=True)
-    username = Column(String(32), index=True)
+    username = Column(String(32), index=True, unique=True)
     password_hash = Column(String(64))
-    email = Column(String(250))
+    email = Column(String(250), index=True, unique=True)
     # active = Column(Integer, default=0)
 
     def hash_password(self, password):
