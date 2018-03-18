@@ -721,8 +721,7 @@ def getFullCatalogJson():
 def getAllItems():
     items = get_all_items()
     Items = [item.serialize for item in items]
-    Categories = [{'name': 'a'}]
-    return jsonify(Categories, Items)
+    return jsonify(Items)
 
 
 @app.route('/users/json')
