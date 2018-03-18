@@ -4,3 +4,4 @@
 .vscode/*
 templates/.old/
 *.bak
+*.db
