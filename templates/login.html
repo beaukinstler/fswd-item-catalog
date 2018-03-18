@@ -17,7 +17,7 @@
         <h3>Sign in or create a user account with Google</h3>
         <span class="g-signin"
             data-scope="openid email"
-            data-clientid="737452906240-jp6gv4gvr6rkr9m02i6j5lmldp6gcif1.apps.googleusercontent.com"
+            data-clientid="{{googOAuthClientId}}"
             data-redirecturi="postmessage"
             data-accesstype="offline"
             data-cookiepolicy="single_host_origin"
@@ -89,9 +89,8 @@
 
         <input type='password' size='10' name='password' value="12345">
 
-        <input type='submit' value='Save'>
+        <input type='submit' value='Login'>
 
-        <a href="{{url_for('showLogin')}}">Cancel</a>
 
     </form>
 </div>
