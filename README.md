@@ -12,12 +12,20 @@ You'll need to have Python installed on your computer. Python 2.7 is the version
 
 I suggest using `pipenv` to create a [python environment](https://docs.pipenv.org/) and the directions I give will assume you are using this.
 
+Also, this app uses secrets stored in two json files. There are examples of these, file saved with this project, but should be replaced with your own.
+
+The first file, _client_secrets.json_, requires a Google OAuth API setup.  [See this Google documentation](https://developers.google.com/identity/protocols/OAuth2) to get setup and get your "client_secrets.json" file.
+
+The next file is just a custom _secrets.json_ file.  The only info stored in it is the secret key passed to the main flask `app` instance on first run. You can just remove the `.example` from the end of the suplied `secrets.json.example` file. If using in production, the value of "SUPER_SECRET_KEY" whould need to be kept secret.
+
+One you have these json files ready, you can run the app.
+
 ## Usage
 
 
-1. Download and unzip the files in this [zip file](), 
-or clone with `$TODO`
-1. `cd` into the 'TODO' folder.
+1. Download and unzip the files in this [zip file](https://github.com/beaukinstler/fswd-item-catalog/archive/submition1.zip), 
+or clone with `git clone git@github.com:beaukinstler/fswd-item-catalog.git`
+1. `cd` into the 'fswd-item-catalog' folder.
 1. If you haven't installed `pip` on your machine, please do so.
 1. If you haven't installed `pipenv`, type
 

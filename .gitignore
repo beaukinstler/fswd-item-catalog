@@ -1,5 +1,5 @@
 *.code-workspace
-*secret*
+*secrets.json
 *.pyc
 .vscode/*
 templates/.old/
