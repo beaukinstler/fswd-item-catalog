@@ -1,6 +1,7 @@
 """
-This file stores the command db functions
+This file stores the command database functions
 to access the database with the app.
+This is where most of the CRUD logic happens.
 """
 from sqlalchemy import exc, desc
 from sqlalchemy import create_engine
@@ -241,6 +242,16 @@ def get_all_categories():
 
 
 def get_user(username):
+    """
+    Purpose: Look up a user based on username.  Note that due to the use
+             of OAuth, the username might be the email address.  So
+             this attempts to look in the database fields 'username'
+             and 'email' for the value passed.
+    Args:
+        username: String - username.
+
+    Returns: One user object, or None if not found.
+    """
     # first look up the username
     user = ses.query(User).filter_by(username=username).first()
 
@@ -251,11 +262,25 @@ def get_user(username):
 
 
 def get_user_from_id(id):
+    """
+    Purpose: Look up a user based on id.
+    Args:
+        id: Int - User's primary key id.
+
+    Returns: One user object, or None if not found.
+    """
     user = ses.query(User).filter_by(id=id).first()
     return user
 
 
 def get_user_id_from_email(email):
+    """
+    Purpose: Look up a user id based on email address.
+    Args:
+        email: String - User's email address.
+
+    Returns: Just the user's ID
+    """
     try:
         user = ses.query(User).filter_by(email=email).first()
         return user.id
@@ -264,6 +289,13 @@ def get_user_id_from_email(email):
 
 
 def get_user_from_email(email):
+    """
+    Purpose: Look up a user based on email address.
+    Args:
+        email: String - User's email address.
+
+    Returns: The user object, or None if not found
+    """
     try:
         user = ses.query(User).filter_by(email=email).first()
         return user
@@ -299,15 +331,24 @@ def update_user(username, password, email):
             user.email = str(email)
         if str(password) != '':
             user.hash_password(password)
+        try:
+            ses.add(user)
+            ses.commit()
+        except exc.IntegrityError as e:
+            ses.rollback()
+            print(e.message)
+            return None
 
-        ses.add(user)
-        ses.commit()
-        return get_user(username).id
+        return get_user(username)
     else:
         return None
 
 
 def get_all_users():
+    """
+    Dump the entire User table.
+    Returns a list of User objects.
+    """
     return ses.query(User)
 
 
