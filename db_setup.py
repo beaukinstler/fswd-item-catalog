@@ -104,13 +104,18 @@ class Category(BASE):
 
     name = Column(String(80), nullable=False)
     id = Column(Integer, primary_key=True)
+    items = relationship("Item", cascade="delete, delete-orphan")
+
+    user_id = Column(Integer, ForeignKey('user.id'), nullable=False)
+    user = relationship(User)
 
     @property
     def serialize(self):
         """Return the object fields as JSON like format"""
         return {
             'name': self.name,
-            'id': self.id
+            'id': self.id,
+            'owner_username': self.user.username
         }
 
 
@@ -127,9 +132,11 @@ class Item(BASE):
     description = Column(String(250))
     price = Column(String(8))
 
-    cat_id = Column(Integer, ForeignKey('category.id'))
-
+    cat_id = Column(Integer, ForeignKey('category.id'), nullable=False)
     category = relationship(Category)
+
+    user_id = Column(Integer, ForeignKey('user.id'), nullable=False)
+    user = relationship(User)
 
     @property
     def serialize(self):
@@ -140,7 +147,8 @@ class Item(BASE):
             'id': self.id,
             'price': self.price,
             'category': self.category.name,
-            'category_id': self.cat_id
+            'category_id': self.cat_id,
+            'owner_username': self.user.username
         }
 
 ENGINE = create_engine('sqlite:///catalog.db')

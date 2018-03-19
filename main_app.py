@@ -460,6 +460,7 @@ def index():
 @app.route('/category/<int:cat_id>/')
 @app.route('/category/<int:cat_id>/show')
 def category(cat_id):
+
     category = get_category(cat_id)
     return render_template('category.html',
                            category=category,
@@ -502,10 +503,14 @@ def newItem(cat_id):
         if response is not None:
             return response
 
+        # Get user from login_session to create owner of new item
+        user = get_user(login_session['username'])
+
         # Create a new item from the request
         new_id = add_item(
                 request.form['cat_id'], request.form['name'],
                 request.form['description'],
+                user.id,
                 request.form['price'])
         flash("New item created!")
         new_cat_id = get_item(new_id).cat_id
@@ -519,6 +524,10 @@ def newItem(cat_id):
         state = get_state_token()
         login_session['state'] = state
         categories = get_all_categories()
+        if categories.first() is None:
+            flash("Please create a category before you make an item!")
+            print('Must create a category first...')
+            return redirect(url_for('newCategory'))
         return render_template('new_category_item.html', cat_id=cat_id,
                                userLoggedIn=userLoggedIn(),
                                categories=categories, STATE=state)
@@ -536,6 +545,11 @@ def editItem(item_id):
                 login_session['state'])
         if response is not None:
             return response
+
+        # Check if user is owner of item
+        if login_session['username'] != get_item(item_id).user.username:
+            flash("You can't change what's not yours...")
+            return redirect(url_for('itemInfo', item_id=item_id))
 
         # Update the item details
         update_item(request.form['cat_id'], item_id,
@@ -568,7 +582,10 @@ def deleteItem(cat_id, item_id):
                 login_session['state'])
         if response is not None:
             return response
-
+        # Check if user is owner of item
+        if login_session['username'] != get_item(item_id).user.username:
+            flash("You can't change what's not yours...")
+            return redirect(url_for('itemInfo', item_id=item_id))
         # Delete or Cancel based on the value of delete field
         if request.form['delete'] == 'Delete':
             delete_item(item_id)
@@ -601,7 +618,11 @@ def newCategory():
         if response is not None:
             return response
 
-        new_id = add_category(request.form['name'])
+        # Get user from session to set owner of new Category
+        user = get_user(login_session['username'])
+
+        # Create the category
+        new_id = add_category(request.form['name'], user.id)
         flash("Category added!")
         return redirect(url_for('categoryDash', cat_id=new_id))
     else:
@@ -628,6 +649,11 @@ def editCategory(cat_id):
         if response is not None:
             return response
 
+        # Verify Category ownership
+        if login_session['username'] != get_category(cat_id).user.username:
+            flash("You can't change what's not yours...")
+            return redirect(url_for('categoryDash', cat_id=cat_id))
+
         update_category(cat_id, request.form['name'])
         flash("Category updated!")
         return redirect(url_for('categoryDash', cat_id=cat_id))
@@ -644,6 +670,7 @@ def editCategory(cat_id):
 
 
 @app.route('/category/<int:cat_id>/delete', methods=['GET', 'POST'])
+@auth.login_required
 def deleteCategory(cat_id):
     if 'username' not in login_session:
         flash("Please login first!")
@@ -655,6 +682,19 @@ def deleteCategory(cat_id):
                 login_session['state'])
         if response is not None:
             return response
+
+        # Verify ownership
+        user = get_user(login_session['username'])
+
+        if user.username != get_category(cat_id).user.username:
+            flash("You can't change what's not yours...")
+            return redirect(url_for('deleteCategory', cat_id=cat_id))
+
+        # Verify all items in the category are owned by the user
+        non_owned_items = check_cat_item_owner(cat_id)
+        if non_owned_items.first() is not None:
+            flash("Sorry, some sub items aren't yours.")
+            return redirect(url_for('categoryDash', cat_id=cat_id))
 
         if request.form['delete'] == 'Delete':
             delete_category(cat_id)
