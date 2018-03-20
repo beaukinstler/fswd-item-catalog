@@ -1,7 +1,6 @@
 from flask import Flask, g, url_for, render_template
 from flask import request, redirect, flash, jsonify
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 from flask import session as login_session
 from db_setup import BASE, User, Item, Category
 from db_command import *
@@ -14,7 +13,7 @@ from oauth2client.client import FlowExchangeError
 import httplib2
 import json
 
-from flask.ext.httpauth import HTTPBasicAuth
+from flask_httpauth import HTTPBasicAuth
 from flask import make_response
 
 SUPER_SECRET_KEY = (
@@ -407,16 +406,15 @@ def currentUser():
 
 
 @app.route('/user/<int:user_id>')
-@auth.verify_password
 def getUser(user_id):
-    user = get_user_from_id(user_id)
-    if user is not None:
-        print user.username
-        print login_session
-        return jsonify(user.serialize)
+    if 'username' in login_session:
+        user = get_user_from_id(user_id)
+
+        if user is not None:
+            return render_template('user.html', user=user)
     else:
-        print 'no user with id {0}'.format(user_id)
-        return 'none'
+        flash("Finding your way?")
+        return redirect(url_for('dashboard'))
 
 
 """
@@ -609,7 +607,7 @@ def deleteItem(cat_id, item_id):
 def newCategory():
     if 'username' not in login_session:
         flash("Please login first!")
-        return redirect(url_for('dashboard'), userLoggedIn=userLoggedIn())
+        return redirect(url_for('dashboard', userLoggedIn=userLoggedIn()))
     if request.method == 'POST':
         # Protect for CRSF
         response = bad_state(
@@ -670,7 +668,6 @@ def editCategory(cat_id):
 
 
 @app.route('/category/<int:cat_id>/delete', methods=['GET', 'POST'])
-@auth.login_required
 def deleteCategory(cat_id):
     if 'username' not in login_session:
         flash("Please login first!")
@@ -765,13 +762,27 @@ def getAllItems():
 
 
 @app.route('/users/json')
-@auth.verify_password
+@auth.login_required
 def getUsers():
-    if 'username' not in login_session:
-        flash("Please login first!")
-        return redirect(url_for('dashboard'))
-    users = get_all_users()
-    return jsonify(User=[user.serialize for user in users])
+    if g.user or 'username' in login_session:
+        users = get_all_users()
+        return jsonify(User=[user.serialize for user in users])
+    flash("Please login first!")
+    return redirect(url_for('dashboard'))
+
+
+@app.route('/user/<int:user_id>/json')
+@auth.login_required
+def getUserJson(user_id):
+
+    user = get_user_from_id(user_id)
+    if user is not None:
+        print user.username
+        print login_session
+        return jsonify(user.serialize)
+    else:
+        print 'no user with id {0}'.format(user_id)
+        return 'none'
 
 
 # helper functions

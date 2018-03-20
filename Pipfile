@@ -17,8 +17,8 @@ python_version = "2.7"
 [packages]
 
 passlib = "*"
-sqlalchemy = "*"
-flask = "*"
+SQLAlchemy = "*"
+Flask = "*"
 flask-httpauth = "*"
 "oauth2client" = "*"
 requests = "*"
