@@ -69,7 +69,7 @@ def get_category(id_to_find):
 
 
 # Add a new category
-def add_category(category_name):
+def add_category(category_name, user_id):
     """
     Create a category in the database
 
@@ -78,7 +78,8 @@ def add_category(category_name):
     Returns: category.id - Int
     """
 
-    category = Category(name=category_name)
+    category = Category(name=category_name,
+                        user_id=user_id)
     ses.add(category)
     ses.commit()
     new_category = ses.query(Category).filter_by(name=category_name).one()
@@ -167,9 +168,9 @@ def get_item(id_to_find):
     return item
 
 
-def add_item(cat_id, name, description, price=0):
+def add_item(cat_id, name, description, user_id, price=0):
     """
-    Using an id and a category, add a  item
+    Using an id and a category, add an item
 
     Args:
     cat_id - (int) id from the category table, for the
@@ -185,7 +186,8 @@ def add_item(cat_id, name, description, price=0):
             Item(
                 name=name, price=price,
                 cat_id=cat_id,
-                description=description
+                description=description,
+                user_id=user_id
                 )
         )
     new_id = ses.add(item)
@@ -374,3 +376,10 @@ def createUser(login_session):
     ses.commit()
     user = ses.query(User).filter_by(email=login_session['email']).one()
     return user.id
+
+
+def check_cat_item_owner(cat_id):
+    cat = get_category(cat_id)
+    non_owned = ses.query(Item).filter(Item.cat_id == cat_id,
+                                       Item.user_id != cat.user_id)
+    return non_owned
