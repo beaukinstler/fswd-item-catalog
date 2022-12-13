@@ -292,10 +292,10 @@ def createInitialAdmin():
 
         # update_object(admin)
         if admin is None:
-            print "couldn't create the admin"
+            print("couldn't create the admin")
         return render_template('initialize.html')
     else:
-        print "admin was found"
+        print("admin was found")
         return "already made"
 
 
@@ -328,8 +328,8 @@ def create_user():
             id = get_user(username).id
             return redirect(url_for('getUser', user_id=id))
         else:
-            print """Error: could not find password or username in
-                    post request, or username already exists"""
+            print("""Error: could not find password or username in
+                    post request, or username already exists""")
             return """Error: could not find password or username in
                     post request, or username already exists"""
 
@@ -376,8 +376,8 @@ def editUser(id):
                          using a unique username and email address.""")
             return redirect(url_for('currentUser'))
         else:
-            print """Error: could not find password or username in
-                    post request, or username already exists"""
+            print("""Error: could not find password or username in
+                    post request, or username already exists""")
             return """Error: could not find password or username in
                     post request, or username already exists"""
 
@@ -777,11 +777,11 @@ def getUserJson(user_id):
 
     user = get_user_from_id(user_id)
     if user is not None:
-        print user.username
-        print login_session
+        print(user.username)
+        print(login_session)
         return jsonify(user.serialize)
     else:
-        print 'no user with id {0}'.format(user_id)
+        print('no user with id {0}'.format(user_id))
         return 'none'
 
 
