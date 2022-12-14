@@ -1,5 +1,6 @@
 
 from pytest import raises
+from time import sleep
 
 """
 in the current form, the file db_setup.py is 
@@ -65,7 +66,17 @@ def test_make_user():
         token = {"token":"test"}
         User.verify_auth_token(token)
 
-    u.generate_auth_token()
+    
+    token = u.generate_auth_token(10)
+    print(len(token))
+    assert len(token) == 132
+
+    decoded_token_user_id = u.verify_auth_token(token)
+    print(decoded_token_user_id)
+    assert decoded_token_user_id == 9999
+
+
+
 
 
 
