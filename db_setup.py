@@ -9,11 +9,15 @@ from sqlalchemy import create_engine
 from passlib.apps import custom_app_context as app_context
 import random
 import string
-from itsdangerous import(
-        TimedJSONWebSignatureSerializer as Serializer,
-        BadSignature,
-        SignatureExpired
-    )
+# from itsdangerous import(
+#         # TimedJSONWebSignatureSerializer as Serializer,
+
+#         BadSignature,
+#         SignatureExpired
+#     )
+import jwt
+from jwt import ExpiredSignatureError, InvalidSignatureError
+from datetime import datetime, timedelta, timezone
 
 BASE = declarative_base()
 
@@ -41,7 +45,7 @@ class User(BASE):
 
     def generate_auth_token(self, expiration=600):
         """
-        Use itsdangerous.TimedJSONWebSignatureSerializer
+        Use jwt.encode
         to encrypt a token, and the secret key created global
         in the class.
 
@@ -53,8 +57,15 @@ class User(BASE):
 
         Returns: encrypted token, containing id of the user
         """
-        s = Serializer(secret_key, expires_in=expiration)
-        return s.dumps({'id': self.id})
+        # s = Serializer(secret_key, expires_in=expiration)
+        """replace the above code with jwt.encode"""
+        # days: 0, seconds: var
+        goodfor = timedelta(0,expiration)
+        future_time =  datetime.now(tz=timezone.utc) + goodfor
+        token = {'id': self.id}
+        dict_data = {"token": token, "exp":future_time}
+        encoded_token = jwt.encode(dict_data, secret_key, algorithm="HS256")
+        return encoded_token
 
     @property
     def serialize(self):
@@ -73,25 +84,30 @@ class User(BASE):
                  and for BadSignatures. If these exceptions
                  are found, "None" is returned
 
-        Params: A token created with Serializer
+        Params: A token created with jwt.encode
 
         Returns: a user_id if successfully decrypted
                  from the token
         """
 
-        s = Serializer(secret_key)
+        
         try:
-            data = s.loads(token)
-        except SignatureExpired:
+            decoded_data = jwt.decode(token, secret_key, algorithms="HS256")
+            print(str(decoded_data))
+            data = decoded_data['token']
+        except ExpiredSignatureError:
             print("Expired token")
             return None
-        except BadSignature:
-            print("Bad token: {0}".format(BadSignature.message))
+        except InvalidSignatureError:
+            print("Bad token: {0}".format(InvalidSignatureError.message))
             return None
-
-        print("if bad token,this shouldn't print")
-        user_id = data['id']
-        return user_id
+        except Exception as e:
+            print("Unexpected exection")
+            print
+            print(type(e).__name__)
+            raise e
+       
+        return data['id']
 
 
 class Category(BASE):
