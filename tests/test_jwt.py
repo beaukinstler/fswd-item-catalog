@@ -7,7 +7,7 @@ from time import sleep
 plaintext = "a long time ago in a..."
 key = "secret"
 # establish a fiture expiration
-seconds_to_test = 10
+seconds_to_test = 1
 goodfor = timedelta(0,seconds_to_test) # days: 0, seconds: var
 future_time =  datetime.now(tz=timezone.utc) + goodfor
 
