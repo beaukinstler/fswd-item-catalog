@@ -20,7 +20,7 @@ BASE = declarative_base()
 # This secret_key will be used to both encrypt and decrypt
 secret_key = (
         ''.join(random.choice(
-                string.ascii_uppercase + string.digits) for x in xrange(32)
+                string.ascii_uppercase + string.digits) for x in range(32)
                 )
     )
 
