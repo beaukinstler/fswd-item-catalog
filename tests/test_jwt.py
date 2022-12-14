@@ -7,7 +7,7 @@ from time import sleep
 plaintext = "a long time ago in a..."
 key = "secret"
 # establish a fiture expiration
-seconds_to_test = 1
+seconds_to_test = 4
 goodfor = timedelta(0,seconds_to_test) # days: 0, seconds: var
 future_time =  datetime.now(tz=timezone.utc) + goodfor
 
@@ -63,7 +63,6 @@ def test_expired_time():
     # time shoud have expired by now.
     with raises(Exception) as e_info:
         unencoded = jwt.decode(encoded, key, algorithms="HS256")
-
     try:
         unencoded = jwt.decode(encoded, key, algorithms="HS256")
         assert False
