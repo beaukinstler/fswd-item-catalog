@@ -34,6 +34,25 @@ def test_encode_of_simple_dict_no_time_limit():
 
     assert unencoded['token'] == plaintext
 
+
+def test_bad_key():
+    # sleep until expired and assume and exception will be thrown
+    # time and token created globally.
+    # see the setup above.
+
+
+
+    # time shoud have expired by now.
+    with raises(Exception) as e_info:
+        _ = jwt.decode(encoded, "not the right key", algorithms="HS256")
+
+    try:
+        _ = jwt.decode(encoded, "not the right key", algorithms="HS256")
+        assert False
+    except Exception as e:
+        print(type(e).__name__) 
+        assert type(e).__name__ == "InvalidSignatureError"
+
 def test_expired_time():
     # sleep until expired and assume and exception will be thrown
     # time and token created globally.
@@ -44,4 +63,14 @@ def test_expired_time():
     # time shoud have expired by now.
     with raises(Exception) as e_info:
         unencoded = jwt.decode(encoded, key, algorithms="HS256")
+
+    try:
+        unencoded = jwt.decode(encoded, key, algorithms="HS256")
+        assert False
+    except Exception as e:
+        print(type(e).__name__) 
+        assert type(e).__name__ == "ExpiredSignatureError"
+
+    
+
 
