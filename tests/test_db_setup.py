@@ -66,8 +66,8 @@ def test_make_user():
         token = {"token":"test"}
         User.verify_auth_token(token)
 
-    
-    token = u.generate_auth_token(10)
+    seconds_to_allow = 1
+    token = u.generate_auth_token(seconds_to_allow)
     print(len(token))
     assert len(token) == 132
 
@@ -75,8 +75,17 @@ def test_make_user():
     print(decoded_token_user_id)
     assert decoded_token_user_id == 9999
 
+    # assert that the decode can happen more than once
+    # with the same token
+    decoded_token_user_id2 = u.verify_auth_token(token)
+    print(decoded_token_user_id2)
+    assert decoded_token_user_id2 == 9999
 
-
+    # expire
+    sleep(seconds_to_allow + 1)
+    decoded_token_user_id = u.verify_auth_token(token)
+    print(decoded_token_user_id)
+    assert decoded_token_user_id == None
 
 
 
