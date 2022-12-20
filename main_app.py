@@ -781,7 +781,7 @@ def getAllItems():
 @auth.login_required
 def getUsers():
     if g.user or 'username' in login_session:
-        users = get_all_users()
+        users = get_all_users(session)
         return jsonify(User=[user.serialize for user in users])
     flash("Please login first!")
     return redirect(url_for('dashboard'))
