@@ -149,7 +149,7 @@ class Item(BASE):
     price = Column(String(8))
 
     cat_id = Column(Integer, ForeignKey('category.id'), nullable=False)
-    category = relationship(Category)
+    category = relationship(Category, viewonly=True)
 
     user_id = Column(Integer, ForeignKey('user.id'), nullable=False)
     user = relationship(User)
