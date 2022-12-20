@@ -87,9 +87,19 @@ def test_make_user():
     print(decoded_token_user_id)
     assert decoded_token_user_id == None
 
+    
+def test_token_decode_error():
+    # junk for blank data sent to be decoded.
+    # give an a user
+    # when the verify auth token is passed an empty string
+    # then None should be returned
+    u = User()
+    u.email = "test@example.com"
+    u.id = 9999
+    u.username = "tester"
+    u.password_hash = fixture_string_generate(64)
+    token = ""
+    assert None == User.verify_auth_token(token)
 
 
 
-# ENGINE = create_engine('sqlite:///test_catalog.db')
-
-# BASE.metadata.create_all(ENGINE)

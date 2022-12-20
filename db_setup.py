@@ -16,7 +16,7 @@ import string
 #         SignatureExpired
 #     )
 import jwt
-from jwt import ExpiredSignatureError, InvalidSignatureError
+from jwt import ExpiredSignatureError, InvalidSignatureError, DecodeError
 from datetime import datetime, timedelta, timezone
 
 BASE = declarative_base()
@@ -100,6 +100,9 @@ class User(BASE):
             return None
         except InvalidSignatureError:
             print("Bad token: {0}".format(InvalidSignatureError.message))
+            return None
+        except DecodeError:
+            print("Decoding error: {0}".format(DecodeError))
             return None
         except Exception as e:
             print("Unexpected exection")
