@@ -36,7 +36,7 @@ auth = HTTPBasicAuth()
 app = Flask(__name__)
 app.secret_key = SUPER_SECRET_KEY
 
-engine = create_engine('sqlite:///catalog.db')
+engine = create_engine('sqlite:///catalog.db?check_same_thread=False')
 BASE.metadata.bind = engine
 
 DBSession = sessionmaker(bind=engine)
