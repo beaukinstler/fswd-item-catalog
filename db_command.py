@@ -10,16 +10,7 @@ import random
 import string
 from db_setup import BASE, Item, Category, User
 
-engine = create_engine('sqlite:///catalog.db')
-
-BASE.metadata.bind = engine
-
-DBSession = sessionmaker(bind=engine)
-
-ses = DBSession()
-
-
-def update_object(object_name):
+def update_object(ses,object_name):
     """
     Purpose:
             Take and object, and update it in the database
@@ -39,7 +30,7 @@ def update_object(object_name):
         print("Error message:" % e.message)
 
 
-def list_all_category():
+def list_all_category(ses):
     """
     List all categories by name and id, order based on data table
     """
@@ -51,7 +42,7 @@ def list_all_category():
                                           str(category.cat_id)))
 
 
-def get_all_categories():
+def get_all_categories(ses):
     """
     Get all categories by name and id, order based on data table
     Returns: An iterable list of category objects
@@ -61,7 +52,7 @@ def get_all_categories():
 
 
 # Find category by ID
-def get_category(id_to_find):
+def get_category(ses,id_to_find):
     """ Using and id number, return a category object """
 
     category = ses.query(Category).filter_by(id=id_to_find).one()
@@ -69,7 +60,7 @@ def get_category(id_to_find):
 
 
 # Add a new category
-def add_category(category_name, user_id):
+def add_category(ses,category_name, user_id):
     """
     Create a category in the database
 
@@ -86,7 +77,7 @@ def add_category(category_name, user_id):
     return new_category.id
 
 
-def delete_category(cat_id):
+def delete_category(ses,cat_id):
     """
     Using an id, delete a category from the database
 
@@ -98,7 +89,7 @@ def delete_category(cat_id):
 
 
 # Change a category
-def update_category(cat_id, name):
+def update_category(ses,cat_id, name):
     """
     Using an id, update the details of a category
 
@@ -107,12 +98,12 @@ def update_category(cat_id, name):
              category being changed.
     name - (string) New Name of the category.
     """
-    category = get_category(cat_id)
+    category = get_category(ses,cat_id)
     category.name = name
-    update_object(category)
+    update_object(ses,category)
 
 
-def get_all_items(cat_id=0):
+def get_all_items(ses,cat_id=0):
     """
     Using an category.id, return all items in that category
 
@@ -129,7 +120,7 @@ def get_all_items(cat_id=0):
     return items
 
 
-def get_recent_items(cat_id=0, limit_number=10):
+def get_recent_items(ses,cat_id=0, limit_number=10):
     """
     Return a list of recent items
 
@@ -152,7 +143,7 @@ def get_recent_items(cat_id=0, limit_number=10):
     return items
 
 
-def get_item(id_to_find):
+def get_item(ses,id_to_find):
     """ Using an ID, return a  item
 
     Args:
@@ -168,7 +159,7 @@ def get_item(id_to_find):
     return item
 
 
-def add_item(cat_id, name, description, user_id, price=0):
+def add_item(ses,cat_id, name, description, user_id, price=0):
     """
     Using an id and a category, add an item
 
@@ -199,18 +190,18 @@ def add_item(cat_id, name, description, user_id, price=0):
     return new_item.id
 
 
-def delete_item(item_id):
+def delete_item(ses,item_id):
     """
     Using an id, delete an item from the database
 
     Args: item_id - Int
     """
-    item = get_item(item_id)
+    item = get_item(ses,item_id)
     ses.delete(item)
     ses.commit()
 
 
-def update_item(cat_id, item_id, name, description, price):
+def update_item(ses,cat_id, item_id, name, description, price):
     """
     using an id, update the details of a item
     item id cannot be updated. If a detail is blank, it will be skipped
@@ -222,7 +213,7 @@ def update_item(cat_id, item_id, name, description, price):
         price: String(8) Price of the item
     """
 
-    item = get_item(item_id)
+    item = get_item(ses,item_id)
     if str(name) != "":
         item.name = str(name)
     if str(description) != "":
@@ -232,18 +223,10 @@ def update_item(cat_id, item_id, name, description, price):
     if str(cat_id) != "":
         item.cat_id = str(cat_id)
 
-    update_object(item)
+    update_object(ses,item)
 
 
-def get_all_categories():
-    """
-    Get all categories by name and id, order based on data table
-    Returns: An iterable list of category objects
-    """
-    return ses.query(Category)
-
-
-def get_user(username):
+def get_user(ses,username):
     """
     Purpose: Look up a user based on username.  Note that due to the use
              of OAuth, the username might be the email address.  So
@@ -263,7 +246,7 @@ def get_user(username):
     return user
 
 
-def get_user_from_id(id):
+def get_user_from_id(ses,id):
     """
     Purpose: Look up a user based on id.
     Args:
@@ -275,7 +258,7 @@ def get_user_from_id(id):
     return user
 
 
-def get_user_id_from_email(email):
+def get_user_id_from_email(ses,email):
     """
     Purpose: Look up a user id based on email address.
     Args:
@@ -290,7 +273,7 @@ def get_user_id_from_email(email):
         return None
 
 
-def get_user_from_email(email):
+def get_user_from_email(ses,email):
     """
     Purpose: Look up a user based on email address.
     Args:
@@ -305,7 +288,7 @@ def get_user_from_email(email):
         return None
 
 
-def add_user(username, password, email):
+def add_user(ses,username, password, email):
     """
     Add a new user, return None if not able
     """
@@ -316,16 +299,16 @@ def add_user(username, password, email):
         # new_user.active = 0
         ses.add(new_user)
         ses.commit()
-        return get_user(username).id
+        return get_user(ses,username).id
     else:
         return None
 
 
-def update_user(username, password, email):
+def update_user(ses, username, password, email):
     """
     Add a new user, return None if not able
     """
-    user = get_user(username) if get_user(username) is not None else get_user(email)  # noqa
+    user = get_user(ses,username) if get_user(ses,username) is not None else get_user(email)  # noqa
     if user is not None:
         if str(username) != '':
             user.username = str(username)
@@ -341,12 +324,12 @@ def update_user(username, password, email):
             print(e.message)
             return None
 
-        return get_user(username)
+        return get_user(ses,username)
     else:
         return None
 
 
-def get_all_users():
+def get_all_users(ses):
     """
     Dump the entire User table.
     Returns a list of User objects.
@@ -354,7 +337,7 @@ def get_all_users():
     return ses.query(User)
 
 
-def createUser(login_session):
+def createUser(ses,login_session):
     """
     Create an OAuth user, with a fake password hash
     Args: web session object
@@ -362,7 +345,7 @@ def createUser(login_session):
     """
     fake_password_hash = (
             ''.join(
-                    random.choice(string.ascii_uppercase + string.digits) for x in xrange(255)  # noqa
+                    random.choice(string.ascii_uppercase + string.digits) for x in range(255)  # noqa
                 )
         )
     newUser = (
@@ -378,8 +361,8 @@ def createUser(login_session):
     return user.id
 
 
-def check_cat_item_owner(cat_id):
-    cat = get_category(cat_id)
+def check_cat_item_owner(ses,cat_id):
+    cat = get_category(ses,cat_id)
     non_owned = ses.query(Item).filter(Item.cat_id == cat_id,
                                        Item.user_id != cat.user_id)
     return non_owned

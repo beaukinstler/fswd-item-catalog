@@ -1,8 +1,10 @@
 from flask import Flask, g, url_for, render_template
 from flask import request, redirect, flash, jsonify
 from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 from flask import session as login_session
-from db_setup import BASE, User, Item, Category
+# from flask.ext.session import Session
+#from db_setup import BASE, User, Item, Category # do I need this, if I'm importing from db_command?
 from db_command import *
 import random
 import string
@@ -32,11 +34,13 @@ auth = HTTPBasicAuth()
 
 
 app = Flask(__name__)
+app.secret_key = SUPER_SECRET_KEY
 
 engine = create_engine('sqlite:///catalog.db')
 BASE.metadata.bind = engine
 
 DBSession = sessionmaker(bind=engine)
+# session = get_db_session()
 session = DBSession()
 
 """
@@ -84,11 +88,11 @@ def showLogin():
         email = request.form['email']
 
         # Try to get user from username first
-        user = get_user(username)
+        user = get_user(session,username)
 
         # Try to get user from email
         if user is None:
-            user = get_user(email)
+            user = get_user(session,email)
         if user is not None:
             if user.verify_password(password):
                 login_session['username'] = user.username
@@ -98,10 +102,13 @@ def showLogin():
                 return redirect(url_for('dashboard'))
             else:
                 flash("Password failed")
-                return redirect(url_for('dashboard'))
+                return redirect(url_for('showLogin'))
+        elif user is None:
+            flash("Who are you?")
+            return redirect(url_for('dashboard'))
 
-    if request.method == 'GET':
-        if get_user('admin') is None:
+    elif request.method == 'GET':
+        if get_user(session,'admin') is None:
             return redirect(url_for('createInitialAdmin'))
         # Protect CSRF
         state = get_state_token()
@@ -109,6 +116,13 @@ def showLogin():
         return render_template('login.html',
                                STATE=state,
                                googOAuthClientId=GOOG_CLIENT_ID)
+
+    else:
+        flash("We didn't find that user. Please try again.")
+        return redirect(url_for('dashboard'))
+    
+    # if all else fails, return to dash
+    return redirect(url_for('dashboard'))
 
 
 @app.route('/gconnect', methods=['GET', 'POST'])
@@ -186,11 +200,11 @@ def gconnect():
     login_session['email'] = data['email']
     login_session['provider'] = 'google'
     # see if user exists, if not make it
-    userID = get_user_id_from_email(login_session['email'])
+    userID = get_user_id_from_email(session,login_session['email'])
 
     if userID is None:
         # print('No user ID found, creating user')
-        userID = createUser(login_session)
+        userID = createUser(session,login_session)
         login_session['user_id'] = userID
     else:
         login_session['user_id'] = userID
@@ -285,12 +299,12 @@ def get_token():
 
 @app.route('/user/create/admin')
 def createInitialAdmin():
-    if get_user('admin') is None:
+    if get_user(session,'admin') is None:
         """create the admin user with defaults"""
-        add_user('admin', 'password', 'admin@example.com')
-        admin = get_user('admin')
+        add_user(session,'admin', 'password', 'admin@example.com')
+        admin = get_user(session,'admin')
 
-        # update_object(admin)
+        # update_object(session,admin)
         if admin is None:
             print("couldn't create the admin")
         return render_template('initialize.html')
@@ -322,10 +336,10 @@ def create_user():
         if (
                 username is not None and
                 password is not None and
-                get_user(username) is None and
-                get_user_id_from_email(email) is None):
-            new_id = add_user(username, password, email)
-            id = get_user(username).id
+                get_user(session,username) is None and
+                get_user_id_from_email(session,email) is None):
+            new_id = add_user(session,username, password, email)
+            id = get_user(session,username).id
             return redirect(url_for('getUser', user_id=id))
         else:
             print("""Error: could not find password or username in
@@ -365,8 +379,8 @@ def editUser(id):
         # logged in user from the session
         if (username is not None and
                 password is not None and
-                id == get_user(login_session['username']).id):
-            user = update_user(username, password, email)
+                id == get_user(session,login_session['username']).id):
+            user = update_user(session,username, password, email)
             if user is not None:
                 flash("User updated")
                 login_session['username'] = user.username
@@ -386,7 +400,7 @@ def editUser(id):
         # to protect CSRF
         state = get_state_token()
         login_session['state'] = state
-        user = get_user(login_session['username'])
+        user = get_user(session,login_session['username'])
         return render_template('changepassword.html', user=user, STATE=state)
 
 
@@ -395,10 +409,10 @@ def currentUser():
     if 'username' in login_session:
         username = login_session['username']
         email = login_session['email']
-        user = get_user(username)
+        user = get_user(session,username)
         # may need to look up using email instead for OAuth accounts
         # the user will be None if it wasn't found
-        user = get_user_from_email(email) if user is None else user
+        user = get_user_from_email(session,email) if user is None else user
         return render_template('user.html', user=user)
     else:
         flash("couldn't find user in session, please try logging in")
@@ -408,7 +422,7 @@ def currentUser():
 @app.route('/user/<int:user_id>')
 def getUser(user_id):
     if 'username' in login_session:
-        user = get_user_from_id(user_id)
+        user = get_user_from_id(session,user_id)
 
         if user is not None:
             return render_template('user.html', user=user)
@@ -425,8 +439,8 @@ Catalog routes
 @app.route('/')
 @app.route('/dashboard')
 def dashboard():
-    categories = get_all_categories()
-    recent_items = get_recent_items()
+    categories = get_all_categories(session)
+    recent_items = get_recent_items(session)
     return render_template('dashboard.html',
                            categories=categories,
                            items=recent_items,
@@ -435,9 +449,9 @@ def dashboard():
 
 @app.route('/dashboard/<int:cat_id>/')
 def categoryDash(cat_id):
-    categories = get_all_categories()
-    category = get_category(cat_id)
-    recent_items = get_recent_items(category.id, 100)
+    categories = get_all_categories(session)
+    category = get_category(session, cat_id)
+    recent_items = get_recent_items(session,category.id, 100)
     return render_template('category_dash.html', categories=categories,
                            items=recent_items, category=category,
                            userLoggedIn=userLoggedIn())
@@ -449,7 +463,7 @@ def index():
         flash("Please login first!")
         print(request.referrer)
         return redirect(request.referrer)
-    categories = get_all_categories()
+    categories = get_all_categories(session)
     return render_template('categories.html',
                            categories=categories,
                            userLoggedIn=userLoggedIn())
@@ -459,7 +473,7 @@ def index():
 @app.route('/category/<int:cat_id>/show')
 def category(cat_id):
 
-    category = get_category(cat_id)
+    category = get_category(session, cat_id)
     return render_template('category.html',
                            category=category,
                            userLoggedIn=userLoggedIn())
@@ -477,7 +491,7 @@ def categoryItems(cat_id):
 
 @app.route('/item/<int:item_id>/')
 def itemInfo(item_id):
-    item = get_item(item_id)
+    item = get_item(session,item_id)
     # userLoggedIn = 0
     # if 'username' in login_session:
     #     userLoggedIn = 1
@@ -502,16 +516,17 @@ def newItem(cat_id):
             return response
 
         # Get user from login_session to create owner of new item
-        user = get_user(login_session['username'])
+        user = get_user(session,login_session['username'])
 
         # Create a new item from the request
         new_id = add_item(
+                session,
                 request.form['cat_id'], request.form['name'],
                 request.form['description'],
                 user.id,
                 request.form['price'])
         flash("New item created!")
-        new_cat_id = get_item(new_id).cat_id
+        new_cat_id = get_item(session,new_id).cat_id
         if new_cat_id is None:
             return redirect(url_for('dashboard'))
         else:
@@ -521,7 +536,7 @@ def newItem(cat_id):
         # to protect CSRF
         state = get_state_token()
         login_session['state'] = state
-        categories = get_all_categories()
+        categories = get_all_categories(session)
         if categories.first() is None:
             flash("Please create a category before you make an item!")
             print('Must create a category first...')
@@ -545,12 +560,13 @@ def editItem(item_id):
             return response
 
         # Check if user is owner of item
-        if login_session['username'] != get_item(item_id).user.username:
+        if login_session['username'] != get_item(session,item_id).user.username:
             flash("You can't change what's not yours...")
             return redirect(url_for('itemInfo', item_id=item_id))
 
         # Update the item details
-        update_item(request.form['cat_id'], item_id,
+        update_item(session,
+                    request.form['cat_id'], item_id,
                     request.form['name'], request.form['description'],
                     request.form['price'])
         flash("Item updated!")
@@ -560,8 +576,8 @@ def editItem(item_id):
         # to protect CSRF
         state = get_state_token()
         login_session['state'] = state
-        item = get_item(item_id)
-        categories = get_all_categories()
+        item = get_item(session,item_id)
+        categories = get_all_categories(session)
         return render_template('edititem.html', item=item,
                                categories=categories,
                                userLoggedIn=userLoggedIn(), STATE=state)
@@ -581,12 +597,12 @@ def deleteItem(cat_id, item_id):
         if response is not None:
             return response
         # Check if user is owner of item
-        if login_session['username'] != get_item(item_id).user.username:
+        if login_session['username'] != get_item(session,item_id).user.username:
             flash("You can't change what's not yours...")
             return redirect(url_for('itemInfo', item_id=item_id))
         # Delete or Cancel based on the value of delete field
         if request.form['delete'] == 'Delete':
-            delete_item(item_id)
+            delete_item(session, item_id)
             flash("Item deleted!")
         elif request.form['delete'] == 'Cancel':
             pass
@@ -596,7 +612,7 @@ def deleteItem(cat_id, item_id):
         # to protect CSRF
         state = get_state_token()
         login_session['state'] = state
-        item = get_item(item_id)
+        item = get_item(session,item_id)
         return render_template('deleteitem.html',
                                item=item,
                                userLoggedIn=userLoggedIn(),
@@ -617,10 +633,10 @@ def newCategory():
             return response
 
         # Get user from session to set owner of new Category
-        user = get_user(login_session['username'])
+        user = get_user(session,login_session['username'])
 
         # Create the category
-        new_id = add_category(request.form['name'], user.id)
+        new_id = add_category(session,request.form['name'], user.id)
         flash("Category added!")
         return redirect(url_for('categoryDash', cat_id=new_id))
     else:
@@ -648,11 +664,11 @@ def editCategory(cat_id):
             return response
 
         # Verify Category ownership
-        if login_session['username'] != get_category(cat_id).user.username:
+        if login_session['username'] != get_category(session, cat_id).user.username:
             flash("You can't change what's not yours...")
             return redirect(url_for('categoryDash', cat_id=cat_id))
 
-        update_category(cat_id, request.form['name'])
+        update_category(session, cat_id, request.form['name'])
         flash("Category updated!")
         return redirect(url_for('categoryDash', cat_id=cat_id))
     else:
@@ -660,7 +676,7 @@ def editCategory(cat_id):
         # to protect CSRF
         state = get_state_token()
         login_session['state'] = state
-        category = get_category(cat_id)
+        category = get_category(session, cat_id)
         return render_template('editcategory.html',
                                category=category,
                                userLoggedIn=userLoggedIn(),
@@ -681,9 +697,9 @@ def deleteCategory(cat_id):
             return response
 
         # Verify ownership
-        user = get_user(login_session['username'])
+        user = get_user(session,login_session['username'])
 
-        if user.username != get_category(cat_id).user.username:
+        if user.username != get_category(session, cat_id).user.username:
             flash("You can't change what's not yours...")
             return redirect(url_for('deleteCategory', cat_id=cat_id))
 
@@ -694,7 +710,7 @@ def deleteCategory(cat_id):
             return redirect(url_for('categoryDash', cat_id=cat_id))
 
         if request.form['delete'] == 'Delete':
-            delete_category(cat_id)
+            delete_category(session, cat_id)
             flash("Category deleted!")
         elif request.form['delete'] == 'Cancel':
             pass
@@ -704,7 +720,7 @@ def deleteCategory(cat_id):
         # to protect CSRF
         state = get_state_token()
         login_session['state'] = state
-        category = get_category(cat_id)
+        category = get_category(session, cat_id)
         return render_template('deletecategory.html',
                                category=category,
                                STATE=state)
@@ -722,8 +738,8 @@ def jsonPage():
 
 @app.route('/category/<int:cat_id>/json', methods=['GET'])
 def getAllItemJson(cat_id):
-    cat = get_category(cat_id).serialize
-    items = get_all_items(cat_id)
+    cat = get_category(session, cat_id).serialize
+    items = get_all_items(session,cat_id)
     return_json = cat.copy()
     return_json.update(Items=[item.serialize for item in items])
     return jsonify(return_json)
@@ -731,24 +747,24 @@ def getAllItemJson(cat_id):
 
 @app.route('/item/<int:item_id>/json', methods=['GET'])
 def getItemJson(item_id):
-    item = get_item(item_id)
+    item = get_item(session,item_id)
     return jsonify(Items=item.serialize)
 
 
 @app.route('/categories/json', methods=['GET'])
 def getAllCategoriesJson():
-    categories = get_all_categories()
+    categories = get_all_categories(session)
     return jsonify(Categories=[res.serialize for res in categories])
 
 
 @app.route('/fullcatalog/json', methods=['GET'])
 def getFullCatalogJson():
     return_json = []
-    categories = get_all_categories()
+    categories = get_all_categories(session)
 
     for category in categories:
         temp = category.serialize.copy()
-        items = get_all_items(category.id)
+        items = get_all_items(session, category.id)
         temp.update(Items=[item.serialize for item in items])
         return_json.append(temp)
     return jsonify(return_json)
@@ -756,7 +772,7 @@ def getFullCatalogJson():
 
 @app.route('/allitems/json', methods=['GET'])
 def getAllItems():
-    items = get_all_items()
+    items = get_all_items(session)
     Items = [item.serialize for item in items]
     return jsonify(Items)
 
@@ -775,7 +791,7 @@ def getUsers():
 @auth.login_required
 def getUserJson(user_id):
 
-    user = get_user_from_id(user_id)
+    user = get_user_from_id(session,user_id)
     if user is not None:
         print(user.username)
         print(login_session)
@@ -825,6 +841,6 @@ def bad_state(request_token, session_token):
 
 
 if __name__ == '__main__':
-    app.secret_key = SUPER_SECRET_KEY
+    #app.secret_key = SUPER_SECRET_KEY
     app.debug = True
     app.run(host='0.0.0.0', port=5000)
