@@ -8,22 +8,25 @@ This is a sample project for Udacity's "Programming Foundations" course, and the
 ## Getting Started
 
 
-You'll need to have Python installed on your computer. Python 2.7 is the version this application is developed on.
+You'll need to have Python installed on your computer. Python 3.10 is the version this application 
+has been updated to support. Python 2.7 would require using versions found in the git history.
 
-I suggest using `pipenv` to create a [python environment](https://docs.pipenv.org/) and the directions I give will assume you are using this.
+I suggest using `pipenv` to create a [python environment](https://docs.pipenv.org/)
+and the directions I give will assume you are using this.
 
 Also, this app uses secrets stored in two json files. There are examples of these, file saved with this project, but should be replaced with your own.
 
-The first file, _client_secrets.json_, requires a Google OAuth API setup.  [See this Google documentation](https://developers.google.com/identity/protocols/OAuth2) to get setup and get your "client_secrets.json" file.
+TODO: #8  update this section, after getting oauth setup again
+~~The first file, `client_secrets.json`, requires a Google OAuth API setup.  [See this Google documentation](https://developers.google.com/identity/protocols/OAuth2) to get setup and get your "client_secrets.json" file.~~
 
-The next file is just a custom _secrets.json_ file.  The only info stored in it is the secret key passed to the main flask `app` instance on first run. You can just remove the `.example` from the end of the suplied `secrets.json.example` file. If using in production, the value of "SUPER_SECRET_KEY" whould need to be kept secret.
+The next file is just a custom `secrets.json` file.  The only info stored in it is the secret key passed to the main flask `app` instance on first run. You can just remove the `.example` from the end of the suplied `secrets.json.example` file. If using in production, the value of "SUPER_SECRET_KEY" whould need to be kept secret.
 
 One you have these json files ready, you can run the app.
 
 ## Usage
 
-
-1. Download and unzip the files in this [zip file](https://github.com/beaukinstler/fswd-item-catalog/archive/submition1.zip), 
+TODO: #7 update the zip file?
+1. ~~Download and unzip the files in this [zip file](https://github.com/beaukinstler/fswd-item-catalog/archive/submition1.zip),~~ 
 or clone with `git clone git@github.com:beaukinstler/fswd-item-catalog.git`
 1. `cd` into the 'fswd-item-catalog' folder.
 1. If you haven't installed `pip` on your machine, please do so.
@@ -33,13 +36,13 @@ or clone with `git clone git@github.com:beaukinstler/fswd-item-catalog.git`
 
 1. If you haven't yet created the _pipenv_, type:
 
-        pipenv --python 2.7
+        pipenv --python 3.10
 
-1. Then, use the _Piplock_ file to install the dependencies bu running:
+1. Then, use the `Piplock` file to install the dependencies bu running:
 
         pipenv install
         
-    NOTE: _If you don't want to use pipenv, and you wish to do this manually, read the _Pipfile_ and install the python dependencies listed_
+    _NOTE: If you don't want to use pipenv, and you wish to do this manually, read the `Pipfile and install the python dependencies listed`_
 
 1. Now you should be close to ready. By default, this app runs on _http://localhost:5000_.  If you wish to change the port, or have a conflict, change the port at the end of the `main_app.py` file
 
