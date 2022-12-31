@@ -101,8 +101,9 @@ class User(BASE):
         except InvalidSignatureError:
             print("Bad token: {0}".format(InvalidSignatureError.message))
             return None
-        except DecodeError:
+        except DecodeError as e:
             print("Decoding error: {0}".format(DecodeError))
+            raise e
             return None
         except Exception as e:
             print("Unexpected exection")

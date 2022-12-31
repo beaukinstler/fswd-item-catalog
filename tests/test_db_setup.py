@@ -63,7 +63,7 @@ def test_make_user():
     u.username = "tester"
     u.password_hash = fixture_string_generate(64)
     with raises(Exception) as e_info:
-        token = {"token":"test"}
+        token = "this should be a problem"
         User.verify_auth_token(token)
 
     seconds_to_allow = 1
@@ -99,7 +99,8 @@ def test_token_decode_error():
     u.username = "tester"
     u.password_hash = fixture_string_generate(64)
     token = ""
-    assert None == User.verify_auth_token(token)
+    with raises(Exception) as e_info:
+        _ = User.verify_auth_token(token)
 
 
 
