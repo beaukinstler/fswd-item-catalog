@@ -6,3 +6,5 @@ templates/.old/
 *.bak
 *.db
 pyproject.toml
+config.json
+client_secret_218827029209-m32kabd1g11b33ephpshp433tv7qv51h.apps.googleusercontent.com.json

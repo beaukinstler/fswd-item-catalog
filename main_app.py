@@ -85,14 +85,14 @@ def showLogin():
 
         username = request.form['username']
         password = request.form['password']
-        email = request.form['email']
+        # email = request.form['email']
 
         # Try to get user from username first
         user = get_user(session,username)
 
-        # Try to get user from email
-        if user is None:
-            user = get_user(session,email)
+        # # Try to get user from email
+        # if user is None:
+        #     user = get_user(session,email)
         if user is not None:
             if user.verify_password(password):
                 login_session['username'] = user.username
@@ -128,7 +128,9 @@ def showLogin():
 @app.route('/gconnect', methods=['GET', 'POST'])
 def gconnect():
     # Validate state token
-    if request.args.get('state') != login_session['state']:
+    import google_auth as ga
+    user_info = ga.get_id_from_response(request,GOOG_CLIENT_ID)
+    if request.form.get('state') != login_session.get('state'):
         response = make_response(json.dumps('Invalid state parameter.'), 401)
         response.headers['Content-Type'] = 'application/json'
         return response
