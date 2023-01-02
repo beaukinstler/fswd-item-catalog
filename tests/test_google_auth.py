@@ -13,16 +13,25 @@ class TestGroup:
     """
 
     @pytest.fixture
-    def fixture1(self):
+    def fixture_goog_data(self):
         data = (
-        json.loads(
-            open("tests/fixture_data/converted_google_token.json", 'r')
-            .read())
-    )
+            json.loads(
+                    open("tests/fixture_data/converted_goog_token.json",
+                        'r').read()
+                )
+        )
         return data
 
-    def test_fixture1(self,fixture1):
-        email = fixture1.get("email")
+    @pytest.fixture
+    def fixture_user(self):
+        data = {
+                    "email":"email@example.com",
+                    "sub":"12345678912312345678",
+            }
+        return data
+
+    def test_fixture_goog_data(self,fixture_goog_data):
+        email = fixture_goog_data.get("email")
         assert "@" in email
 
     def test_new_auth(self):
@@ -33,8 +42,13 @@ class TestGroup:
     def test_get_credential(self):
         assert len(GOOG_CLIENT_ID) > 10
 
-    def test_validate_user(self, fixture1):
-        assert ga.validate_user(fixture1, {"email":"beaukinstler@gmail.com"}) == True
+    def test_validate_user(self, fixture_goog_data, fixture_user):
+
+        user_is_valid = ga.validate_user(
+                                fixture_goog_data,
+                                fixture_user
+                            )
+        assert user_is_valid == True
 
 
 

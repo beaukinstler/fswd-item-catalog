@@ -19,6 +19,13 @@ def get_id_from_response(request, client_id):
     return id_token.verify_oauth2_token(token, requests.Request(), client_id)
 
 def validate_user(token, user):
-    emails_match = user.get("email") == token.get("email")
+    valid = True
+    keys = ("email","sub")
 
-    return emails_match
+    for key in keys:
+
+        valid = user.get(key) == token.get(key) and valid
+
+    valid = valid and token.get("email_verified") 
+
+    return valid
