@@ -77,7 +77,7 @@ def showLogin():
     # The POST method should only be used for the custom login function
     if request.method == 'POST':
         # Protect for CRSF
-        response = bad_state(
+        response = check_state(
                 request.form['state'],
                 login_session['state'])
         if response is not None:
@@ -323,7 +323,7 @@ def create_user():
         return redirect(url_for('dashboard'))
     if request.method == 'POST':
         # Protect for CRSF
-        response = bad_state(
+        response = check_state(
                 request.form['state'],
                 login_session['state'])
         if response is not None:
@@ -365,7 +365,7 @@ def editUser(id):
         return redirect(url_for('dashboard'))
     if request.method == 'POST':
         # Protect for CRSF
-        response = bad_state(
+        response = check_state(
                 request.form['state'],
                 login_session['state'])
         if response is not None:
@@ -511,7 +511,7 @@ def newItem(cat_id):
         return redirect(url_for('dashboard'))
     if request.method == 'POST':
         # Protect for CRSF
-        response = bad_state(
+        response = check_state(
                 request.form['state'],
                 login_session['state'])
         if response is not None:
@@ -555,7 +555,7 @@ def editItem(item_id):
         return redirect(url_for('dashboard'))
     if request.method == 'POST':
         # Protect for CRSF
-        response = bad_state(
+        response = check_state(
                 request.form['state'],
                 login_session['state'])
         if response is not None:
@@ -593,7 +593,7 @@ def deleteItem(cat_id, item_id):
         return redirect(url_for('dashboard'))
     if request.method == 'POST':
         # Protect for CRSF
-        response = bad_state(
+        response = check_state(
                 request.form['state'],
                 login_session['state'])
         if response is not None:
@@ -628,7 +628,7 @@ def newCategory():
         return redirect(url_for('dashboard', userLoggedIn=userLoggedIn()))
     if request.method == 'POST':
         # Protect for CRSF
-        response = bad_state(
+        response = check_state(
                 request.form['state'],
                 login_session['state'])
         if response is not None:
@@ -659,7 +659,7 @@ def editCategory(cat_id):
                                 userLoggedIn=userLoggedIn()))
     if request.method == 'POST':
         # Protect for CRSF
-        response = bad_state(
+        response = check_state(
                 request.form['state'],
                 login_session['state'])
         if response is not None:
@@ -692,7 +692,7 @@ def deleteCategory(cat_id):
         return redirect(url_for('category', cat_id=cat_id))
     if request.method == 'POST':
         # Protect for CRSF
-        response = bad_state(
+        response = check_state(
                 request.form['state'],
                 login_session['state'])
         if response is not None:
@@ -824,7 +824,7 @@ def get_state_token():
     return token
 
 
-def bad_state(request_token, session_token):
+def check_state(request_token, session_token):
     """
     Purpose: Check if the request has the proper state token
 
