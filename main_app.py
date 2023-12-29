@@ -35,6 +35,7 @@ auth = HTTPBasicAuth()
 
 app = Flask(__name__)
 app.secret_key = SUPER_SECRET_KEY
+# app.static_folder = "static"
 
 engine = create_engine('sqlite:///catalog.db?check_same_thread=False')
 BASE.metadata.bind = engine
@@ -125,81 +126,42 @@ def showLogin():
     return redirect(url_for('dashboard'))
 
 
-@app.route('/gconnect', methods=['GET', 'POST'])
+@app.route('/gconnect', methods=['POST'])
 def gconnect():
     # Validate state token
     import google_auth as ga
-    user_info = ga.get_id_from_response(request,GOOG_CLIENT_ID)
-    if request.form.get('state') != login_session.get('state'):
-        response = make_response(json.dumps('Invalid state parameter.'), 401)
-        response.headers['Content-Type'] = 'application/json'
-        return response
-    # Obtain authorization code
-    code = request.data
-
-    try:
-        oauth_flow = flow_from_clientsecrets('client_secrets.json', scope='')
-        oauth_flow.redirect_uri = 'postmessage'
-        credentials = oauth_flow.step2_exchange(code)
-    except FlowExchangeError:
-        response = make_response(
-            json.dumps('Failed to upgrade the authorization code.'), 401)
-        response.headers['Content-Type'] = 'application/json'
-        return response
-
-    # Check that the access token is valid.
-    access_token = credentials.access_token
-    url = ('https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=%s'
-           % access_token)
-    h = httplib2.Http()
-    content = (h.request(url, 'GET')[1])
-    result = json.loads(content.decode('utf-8'))
+    auth_obj = ga.GoogleAuthorization(GOOG_CLIENT_ID
+                                        ,cookies=request.cookies
+                                        , form_data=request.form)
 
     # If there was an error in the access token info, abort.
-    if result.get('error') is not None:
-        response = make_response(json.dumps(result.get('error')), 500)
+    if auth_obj.error_response is not None:
+        error_code,message = auth_obj.error_response
+        response = make_response(json.dumps(message), error_code)
         response.headers['Content-Type'] = 'application/json'
-        return response
+        return response, {"Refresh": f"1; url={url_for('dashboard')}"}
 
-    # Verify that the access token is used for the intended user.
-    gplus_id = credentials.id_token['sub']
-    if result['user_id'] != gplus_id:
-        response = make_response(
-            json.dumps("Token's user ID doesn't match given user ID."), 401)
-        response.headers['Content-Type'] = 'application/json'
-        return response
-
-    # Verify that the access token is valid for this app.
-    if result['issued_to'] != GOOG_CLIENT_ID:
-        response = make_response(
-            json.dumps("Token's client ID does not match app's."), 401)
-        print("Token ent ID does not match app's.")
-        response.headers['Content-Type'] = 'application/json'
-        return response
-
+    # Try to get user from username first
+    user_info = auth_obj.get_user_info()
+    user = get_user(session, user_info['email'])
+    
+    user_is_valid = auth_obj.validate_user(user) and user_info['email_verified'] == True
+    
     stored_access_token = login_session.get('access_token')
-    stored_gplus_id = login_session.get('gplus_id')
-    if stored_access_token is not None and gplus_id == stored_gplus_id:
+    stored_google_id = login_session.get('google_id')
+    if stored_access_token is not None and user_info['sub'] == stored_google_id:
         response = make_response(json.dumps(
                 'Current user is already connected.'),
                 200)
         response.headers['Content-Type'] = 'application/json'
-        return response
+        return response, {"Refresh": f"1; url={url_for('dashboard')}"}
 
     # Store the access token in the session for later use.
-    login_session['access_token'] = credentials.access_token
-    login_session['gplus_id'] = gplus_id
-
-    # Get user info
-    userinfo_url = "https://www.googleapis.com/oauth2/v1/userinfo"
-    params = {'access_token': credentials.access_token, 'alt': 'json'}
-    answer = requests.get(userinfo_url, params=params)
-
-    data = answer.json()
-
-    login_session['username'] = data['name']
-    login_session['picture'] = data['picture']
-    login_session['email'] = data['email']
+    login_session['access_token'] = auth_obj.get_form_token()
+    login_session['google_id'] = user_info['sub'] 
+    login_session['username'] = user_info['name']
+    login_session['picture'] = user_info['picture']
+    login_session['email'] = user_info['email']
     login_session['provider'] = 'google'
     # see if user exists, if not make it
     userID = get_user_id_from_email(session,login_session['email'])
@@ -218,7 +180,7 @@ def gconnect():
     output += login_session['picture']
     output += ' " style = "width: 60px; height: 60px; border-radius: 500px"> '
     flash("Now logged in as {0}".format(login_session['username']))
-    return output
+    return output, {"Refresh": f"1; url={url_for('dashboard')}"}
 
 
 @app.route('/gdisconnect')
@@ -231,43 +193,54 @@ def gdisconnect():
 
     try:
         access_token = login_session.get('access_token')
+        if access_token is None:
+            print('Current user not connected.')
+        google_logged_in_state = json.loads(request.cookies.get('g_state'))
+        login_session.clear()
+        logged_out = True if 'i_t' in google_logged_in_state.keys() else False
+        if logged_out:
+            print('Successfully disconnected.')
+        else:
+            print('Error 400: Failed to revoke token for given user.')
+        
     except NameError as e:
         print("login_session not present")
         print(e.message)
         access_token = None
         pass
 
-    if access_token is None:
-        print('Current user not connected.')
 
-        return redirect(url_for('Logout'))
 
-    url = (
-            "https://accounts.google.com/o/oauth2/revoke?token={0}"
-            .format(login_session['access_token'])
-        )
+    return redirect(url_for('Logout'))
 
-    h = httplib2.Http()
-    result = h.request(url, 'GET')[0]
+    # url = (
+    #         "https://accounts.google.com/o/oauth2/revoke?token={0}"
+    #         .format(login_session['access_token'])
+    #     )
 
-    if result['status'] == '200':
-        login_session.clear()
-        print('Successfully disconnected.')
-        return redirect(url_for('Logout'), 301)
-    else:
-        login_session.clear()
-        print('Error 400: Failed to revoke token for given user.')
-        return redirect(url_for('Logout'), 301)
+    # h = httplib2.Http()
+    # result = h.request(url, 'GET')[0]
 
+    
+    # if result['status'] == '200':
+    #     login_session.clear()
+    #     print('Successfully disconnected.')
+    #     return redirect(url_for('Logout'), 301)
+    # else:
+    #     login_session.clear()
+    #     print('Error 400: Failed to revoke token for given user.')
+    #     return redirect(url_for('Logout'), 301)
+   
 
 @app.route('/logout')
 def Logout():
-
-    if login_session.get('gplus_id'):
+    data = {}
+    if login_session.get('google_id'):
         print("Logged in with google. Calling gdisconnect...")
         return redirect(url_for('gdisconnect'))
     login_session.clear()
-    return render_template('loggedout.html'), 401
+    # data["redirect_url"] = url_for('dashboard')
+    return render_template('loggedout.html', redirect_url=url_for('dashboard')), 401
 
 
 @auth.verify_password

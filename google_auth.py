@@ -1,107 +1,100 @@
 from google.oauth2 import id_token
-from google.auth.transport import requests
-import base64
+from google.auth.transport import requests as google_requests
+
 
 class GoogleAuthorization:
 
-    def __init__(self,google_id, request_response) -> None:
+    def __init__(self,google_id, cookies, form_data) -> None:
 
         self.google_id = google_id
-        self.request_response = request_response
+        self.cookies = cookies
+        self.form_data = form_data
+        self.google_info = None
         
         # initializer functions
-        self.set_reqeust_response(response=request_response)
-        self.set_token()
+        self.refresh_google_info()
 
 
-    def get_token(self):
+    def get_form_token(self):
         """
         find the token in the response and return it to the caller
         There will only be a reponse avaialble if there was a valid repsonse
         """
         try:
-            token = self.request_response.form.get("credential").encode("utf-8")
+
+            token = self.form_data.get("credential").encode("utf-8")
             return token
         except:
             return None
 
-    def set_token(self):
+    def refresh_google_info(self,form_data=None, cookies=None):
         """
         if the token can be validated with google's library,
-        set it the the id_token ot the the returned value
+        set it in the id_token ot the the returned value
+
+        if either of the form_data or cookies are passed to this 
+        function, update them both.
         """
         try:
-            token = self.get_token()
-            self.id_token = id_token.verify_oauth2_token(
+            if cookies or form_data:
+                self.cookies,self.form_data = cookies,form_data
+            self.validate_response()
+            if self.error_response is None:
+                token = self.get_form_token()
+            self.google_info = id_token.verify_oauth2_token(
                             token, 
-                            requests.Request(), 
+                            google_requests.Request(), 
                             self.google_id)
         except:
-            self.id_token = None
+            self.google_info = None
             
             pass
 
-    def set_reqeust_response(self, response):
-        """
-        set and validate the response.
-        
-        Response should only be available if valid
-        """
-
-        self.request_response = response
-        self.validate_response()
-        if self.error_response is not None:
-            self.request_response = None
-
-    # def get_id_from_response(self,request):
-
-
-        
-    #     csrf_token_cookie = request.cookies.get('g_csrf_token')
-    #     if not csrf_token_cookie:
-    #         return (400, 'No CSRF token in Cookie.')
-    #     csrf_token_body = request.form.get('g_csrf_token')
-    #     if not csrf_token_body:
-    #         return (400, 'No CSRF token in post body.')
-    #     if csrf_token_cookie != csrf_token_body:
-    #         return (400, 'Failed to verify double submit cookie.')
-
-    #     token = request.form.get("credential").encode("utf-8")
-
-    #     return id_token.verify_oauth2_token(token, requests.Request(), client_id)
-    
     def validate_response(self):
+        """
+        Do some checks suggest by Google's Documentation
+        https://developers.google.com/identity/gsi/web/guides/verify-google-id-token
+
+        """
 
         self.error_response = None
         
-        csrf_token_cookie = self.request_response.cookies.get('g_csrf_token')
+        csrf_token_cookie = self.cookies.get('g_csrf_token')
         if not csrf_token_cookie:
             self.error_response =  (400, 'No CSRF token in Cookie.')
         
-        csrf_token_body = self.request.form.get('g_csrf_token')
+        csrf_token_body = self.form_data.get('g_csrf_token')
         if not csrf_token_body:
             self.error_response = (400, 'No CSRF token in post body.')
         
         if csrf_token_cookie != csrf_token_body:
             self.error_response = (400, 'Failed to verify double submit cookie.')
 
-        
+    def get_user_info(self,cookies=None,form_data=None):
+        self.refresh_google_info(cookies=cookies, form_data=form_data)
+
+        return self.google_info 
 
     def validate_user(self, user):
         """
         expect a user with dict-like keys that match the keys, and the values
         of our token keys.
 
+        also check that google has verified the email address
+
         return true if valid
         """
-        token = self.get_token()
-        valid = True
-        keys = ("email","sub")
+        try:
+            goolge_info = self.get_user_info()
+            valid = True
+            keys_to_check = ("email")
 
-        for key in keys:
+            for key in keys_to_check:
 
-            valid = user.get(key) == token.get(key) and valid
+                valid = user.get(key) == goolge_info.get(key) and valid
 
-        valid = valid and token.get("email_verified") 
+            valid = valid and goolge_info.get("email_verified") 
 
-        return valid
+            return valid
+        except:
+            return False
