@@ -5,7 +5,7 @@ services:
 
   items:
     container_name: items
-    image: bkin/items:latest
+    image: docker.io/bkin/items:latest
     restart: unless-stopped
 
     env_file:
