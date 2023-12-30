@@ -1,0 +1,31 @@
+version: '3.4'
+
+services:
+  
+
+  items:
+    container_name: items
+    image: bkin/items:latest
+    restart: unless-stopped
+
+    env_file:
+      - .env_example
+
+    ports:
+      - 5000
+    volumes:
+      - "${PWD}/container_entrypoint/:/app/custom_entrypoint/"
+      - "${PWD}/settings/:/app/settings/"
+    networks:
+      - network1
+
+    entrypoint: 
+      - bash
+      - /app/custom_entrypoint/entrypoint.sh
+
+networks:
+  network1:
+    name: swag
+    external: true
+volumes:
+  item-catelog-demo-data: 
