@@ -14,15 +14,8 @@
 {{ super() }}
     <div id="g_id_onload"
         data-client_id="{{googOAuthClientId}}"
-        data-login_uri="http://localhost:5000/gconnect"
-        data-auto_prompt="false"
-        data-state="{{STATE}}"
-        data-referrer-policy="no-referrer-when-downgrade"
-        data-context="signup"
-        data-ux_mode="popup"
-        data-auto_select="true"
-        data-itp_support="true">
-   
+        data-login_uri="http://localhost:5000/login"
+        data-auto_prompt="false">
     </div>
     <div class="g_id_signin"
         data-type="standard"

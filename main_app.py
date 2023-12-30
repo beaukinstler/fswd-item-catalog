@@ -844,5 +844,5 @@ def check_state(request_token, session_token):
 
 if __name__ == '__main__':
     #app.secret_key = SUPER_SECRET_KEY
-    app.debug = True
+    app.debug = False
     app.run(host='0.0.0.0', port=5000)
