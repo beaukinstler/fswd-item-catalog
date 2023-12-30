@@ -20,13 +20,13 @@ from flask import make_response
 
 SUPER_SECRET_KEY = (
         json.loads(
-            open('secrets.json', 'r')
+            open('settings/secrets.json', 'r')
             .read())['super_secret_key']
     )
 
 GOOG_CLIENT_ID = (
         json.loads(
-            open('client_secrets.json', 'r')
+            open('settings/client_secrets.json', 'r')
             .read())['web']['client_id']
     )
 

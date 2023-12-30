@@ -13,18 +13,17 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-# Install pip requirements
-COPY requirements.txt /app/requirements.txt
 # RUN python -m pip install -r requirements.txt
 
 COPY src /app
 COPY templates /app/templates
 COPY templates /app/templates
 COPY static /app/static
-COPY config.json /app/config.json
-COPY client_secrets.json /app/client_secrets.json
-COPY secrets.json /app/secrets.json
+# COPY config.json /app/config.json
+# COPY client_secrets.json /app/client_secrets.json
+# COPY secrets.json /app/secrets.json
 
+WORKDIR /app
 RUN python -m pip install --upgrade pip
 RUN python -m pip install -r requirements.txt
 # Creates a non-root user with an explicit UID and adds permission to access the /app folder
@@ -34,4 +33,4 @@ USER appuser
 
 # During debugging, this entry point will be overridden. For more information, please refer to https://aka.ms/vscode-docker-python-debug
 
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "wsgi:main_app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "main_app:app"]
