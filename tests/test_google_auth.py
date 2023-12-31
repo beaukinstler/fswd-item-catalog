@@ -12,6 +12,28 @@ class TestGroup:
     then:
     """
 
+    auth = ga.GoogleAuthorization(GOOG_CLIENT_ID, )
+
+    @pytest.fixture
+    def fixture_request_form_data(self):
+        data = (
+            json.loads(
+                    open("tests/fixture_data/converted_goog_token.json",
+                        'r').read()
+                )
+        )
+        return data
+
+    @pytest.fixture
+    def fixture_request_cookies(self):
+        data = (
+            json.loads(
+                    open("tests/fixture_data/converted_goog_token.json",
+                        'r').read()
+                )
+        )
+        return data
+
     @pytest.fixture
     def fixture_goog_data(self):
         data = (
@@ -43,6 +65,8 @@ class TestGroup:
         assert len(GOOG_CLIENT_ID) > 10
 
     def test_validate_user(self, fixture_goog_data, fixture_user):
+
+
 
         user_is_valid = ga.validate_user(
                                 fixture_goog_data,
